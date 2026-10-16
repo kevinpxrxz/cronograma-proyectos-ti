@@ -199,7 +199,10 @@ button, input, select { font: inherit; color: inherit; }
 .ep-hint { color: var(--muted); font-size: 13px; padding-left: 18px; }
 .proj-bar { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: flex-end; justify-content: space-between;
   padding: 10px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
-.proj-pick { display: grid; gap: 4px; min-width: 0; flex: 1 1 320px; }
+.app-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: -6px; }
+.app-name { font-family: var(--f-display); font-weight: 700; font-size: 13px; letter-spacing: .04em; color: var(--muted); }
+.proj-pick { display: grid; gap: 6px; min-width: 0; flex: 1 1 320px; }
+.proj-pick .proj-actions { margin-top: 2px; }
 .proj-pick label { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
 .proj-sel-wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; min-width: 0; }
 .proj-sel-wrap select { font-weight: 600; font-size: 15px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 6px;
@@ -387,23 +390,26 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
 <body>
 
 <div class="wrap">
+  <div class="app-top">
+    <span class="app-name">Cronograma de Proyectos TI</span>
+    <label class="theme-switch" for="dark-toggle">
+      <input type="checkbox" id="dark-toggle" role="switch">
+      <span class="sw-track" aria-hidden="true"><span class="sw-thumb"></span></span>
+      <span>Modo oscuro</span>
+    </label>
+  </div>
   <nav class="proj-bar" id="proj-bar" aria-label="Mis cronogramas" hidden>
     <div class="proj-pick">
       <label for="proj-sel">Mis cronogramas</label>
       <div class="proj-sel-wrap"><select id="proj-sel"></select><span class="proj-count" id="proj-count"></span></div>
+      <div class="proj-actions">
+        <button class="btn" id="proj-new" type="button">+ Nuevo cronograma</button>
+        <button class="btn danger" id="proj-del" type="button">Eliminar este cronograma</button>
+      </div>
     </div>
     <div class="seg view-seg" role="group" aria-label="Vista">
       <button type="button" data-view="proj">Cronograma</button>
       <button type="button" data-view="port">Métricas de todos los proyectos</button>
-    </div>
-    <div class="proj-actions">
-      <button class="btn" id="proj-new" type="button">+ Nuevo cronograma</button>
-      <button class="btn danger" id="proj-del" type="button">Eliminar este cronograma</button>
-      <label class="theme-switch" for="dark-toggle">
-        <input type="checkbox" id="dark-toggle" role="switch">
-        <span class="sw-track" aria-hidden="true"><span class="sw-thumb"></span></span>
-        <span>Modo oscuro</span>
-      </label>
     </div>
   </nav>
   <form class="np-form" id="nproj-form" hidden>
