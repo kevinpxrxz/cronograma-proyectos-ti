@@ -22,11 +22,6 @@ Es un único archivo (`index.html`). No necesita servidor ni base de datos.
   - estado de las tareas por proyecto;
   - carga por responsable;
   - lista de tareas atrasadas.
-- **Historias de usuario:** un módulo aparte de los cronogramas con:
-  - código automático (HU-001, HU-002…), título y descripción;
-  - criterios de aceptación en formato **Dado / Cuando / Entonces**;
-  - buscador y opción para duplicar una historia;
-  - descarga en Excel, con una fila por criterio para usarla como base de casos de prueba.
 - **Respaldo:** exporta e importa todos tus cronogramas en un archivo `.json`.
 - **Modo oscuro.**
 
