@@ -150,7 +150,13 @@ details summary { cursor: pointer; color: var(--accent); font-size: 13px; }
 mark.pd { background: color-mix(in srgb, var(--bad) 18%, transparent); color: var(--bad); font-weight: 600; padding: 0 2px; }
 .fix-cambios li::before { content: "✓"; color: var(--ok); }
 .fix-pd { padding: 10px 12px; border-radius: 6px; border: 1px solid color-mix(in srgb, var(--warn) 45%, var(--line)); }
-/* filtros de Azure DevOps y vista del tablero */
+/* botón «Proyectos» y vista del tablero */
+.proj-btn { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; }
+.proj-k { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--accent); }
+#proj-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 280px; }
+.vista-row { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+.vista-row .seg { margin-left: 0; }
+.field select:disabled { opacity: .6; }
 .az-bar { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; display: grid; gap: 10px; }
 .azf-row { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: flex-end; }
 .azf { display: grid; gap: 4px; min-width: 0; flex: 1 1 200px; }
@@ -262,6 +268,7 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
       </label>
       <button class="btn az-btn" id="ia-open" type="button"><span class="az-dot" id="ia-dot" aria-hidden="true"></span><span id="ia-label">Conectar IA</span></button>
       <button class="btn az-btn" id="az-open" type="button"><span class="az-dot" id="az-dot" aria-hidden="true"></span><span id="az-label">Conectar Azure DevOps</span></button>
+      <button class="btn proj-btn" id="proj-open" type="button" hidden><span class="proj-k">Proyectos</span><span id="proj-label">Elegir</span></button>
       <button class="btn" id="bk-export" type="button" title="Descarga un archivo con todas tus historias y sus mockups">Exportar respaldo</button>
       <button class="btn" id="bk-import" type="button" title="Carga historias desde un archivo de respaldo">Importar respaldo</button>
       <input type="file" id="bk-file" accept=".json,application/json" hidden>
@@ -280,22 +287,14 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
     </div>
   </div>
 
-  <section class="az-bar" id="az-bar" aria-label="Filtros de Azure DevOps" hidden>
-    <div class="azf-row">
-      <div class="azf"><label for="azf-proj">Proyecto</label><select id="azf-proj"></select></div>
-      <div class="azf"><label for="azf-area">Ruta de área</label><select id="azf-area" disabled></select></div>
-      <div class="azf"><label for="azf-iter">Sprint (opcional)</label><select id="azf-iter" disabled></select></div>
-      <button class="btn" type="button" id="azf-board" disabled>Ver historias del tablero</button>
+  <div class="vista-row" id="vista-row" hidden>
+    <span class="hint">Mostrar:</span>
+    <div class="seg" role="group" aria-label="Qué historias mostrar">
+      <button type="button" data-vista="todas">Todas</button>
+      <button type="button" data-vista="area">Del proyecto elegido</button>
+      <button type="button" data-vista="pendientes">Sin subir o con cambios</button>
     </div>
-    <div class="azf-row">
-      <span class="hint" id="azf-info"></span>
-      <div class="seg" role="group" aria-label="Qué historias mostrar">
-        <button type="button" data-vista="todas">Todas</button>
-        <button type="button" data-vista="area">De este proyecto y área</button>
-        <button type="button" data-vista="pendientes">Sin subir o con cambios</button>
-      </div>
-    </div>
-  </section>
+  </div>
 
   <section class="az-board" id="az-board" hidden>
     <div class="azb-head">
@@ -430,7 +429,7 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
         <span class="hint">Créalo en Azure DevOps → <b>User settings</b> → <b>Personal access tokens</b>, con los permisos <b>Work Items: Read &amp; write</b> y <b>Project and Team: Read</b>. Solo se envía a Azure DevOps.</span></div>
       <label class="check full"><input type="checkbox" id="az-remember"> Recordar el token en este navegador. Si no lo marcas, se olvida al cerrar la pestaña.</label>
     </div>
-    <p class="note">Después eliges el <b>proyecto</b>, la <b>ruta de área</b> y el <b>sprint</b> en los filtros de la página principal.</p>
+    <p class="note">Al guardar se abre <b>Proyectos</b> para que elijas el proyecto, la ruta de área y el sprint. Puedes cambiarlos cuando quieras con el botón <b>Proyectos</b> de arriba.</p>
     <p class="status" id="az-status" hidden></p>
     <div class="ed-foot">
       <button class="btn danger" type="button" id="az-forget">Olvidar token</button>
@@ -441,6 +440,24 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
       </div>
     </div>
   </form>
+</dialog>
+<dialog id="proj-dialog" aria-labelledby="proj-title">
+  <div class="ed">
+    <div class="ed-top"><h3 id="proj-title">Proyectos de Azure DevOps</h3></div>
+    <p class="note">Elige a dónde se subirán las historias. Puedes cambiarlo cuando quieras: las historias que ya subiste se siguen actualizando donde están.</p>
+    <div class="grid2">
+      <div class="field full"><label for="azf-proj">Proyecto</label><select id="azf-proj"></select></div>
+      <div class="field"><label for="azf-area">Ruta de área</label><select id="azf-area" disabled></select></div>
+      <div class="field"><label for="azf-iter">Sprint (opcional)</label><select id="azf-iter" disabled></select></div>
+    </div>
+    <p class="status" id="azf-info" hidden></p>
+    <div class="ed-foot">
+      <button class="btn" type="button" id="azf-board" disabled>Ver historias del tablero</button>
+      <div class="right">
+        <button class="btn primary" type="button" id="proj-done">Listo</button>
+      </div>
+    </div>
+  </div>
 </dialog>
 <dialog id="fix-dialog" aria-labelledby="fix-title">
   <div class="ed">
@@ -902,7 +919,7 @@ Notas o dependencias:
   // elemento: título, descripción y criterios se reemplazan (no quedan criterios antiguos) y los
   // mockups se sincronizan como adjuntos (se suben los nuevos y se quitan los que borraste).
   const AZ_KEY = 'historias-azure:v1', PAT_KEY = 'historias-azure-pat';
-  // org y token se piden en el diálogo; proyecto, área y sprint se eligen en los filtros de la página.
+  // org y token se piden en el diálogo de conexión; proyecto, área y sprint se eligen en la ventana «Proyectos».
   // tipo y tieneCA se detectan del proceso del proyecto (User Story / Product Backlog Item / Requirement / Issue).
   let az = { org: '', proyecto: '', tipo: 'User Story', tieneCA: true, area: '', iteracion: '' };
   let pat = '';
@@ -924,8 +941,11 @@ Notas o dependencias:
   const azConectado = () => !!(azBase() && pat);
   const azListo = () => azConectado() && !!az.proyecto.trim();
   const destino = () => azBase().toLowerCase() + '|' + az.proyecto.trim().toLowerCase();
-  // nueva: aún no está en este proyecto · al-dia: igual que en Azure · cambios: se editó después de subirla
-  const estadoAz = h => !h.azure || h.azure.destino !== destino() ? 'nueva' : h.azure.firma === firma(h) ? 'al-dia' : 'cambios';
+  // nueva: aún no está en esta organización · al-dia: igual que en Azure · cambios: se editó después de subirla.
+  // Una historia ya subida se actualiza siempre donde está, aunque después se elija otro proyecto.
+  const orgDe = d => String(d || '').split('|')[0];
+  const estadoAz = h => !h.azure || orgDe(h.azure.destino) !== azBase().toLowerCase() ? 'nueva' : h.azure.firma === firma(h) ? 'al-dia' : 'cambios';
+  const dondeEsta = h => { const a = h.azure && (h.azure.area || String(h.azure.destino || '').split('|')[1] || ''); return a ? a.split('\\').join(' › ') : ''; };
 
   async function azFetch(url, opts = {}) {
     let res;
@@ -955,7 +975,7 @@ Notas o dependencias:
     for (const m of imgs.filter(m => !adj[m.id])) {
       const blob = await IDB.get(m.id);
       if (!blob) continue;
-      const r = await azFetch(`${azBase()}/${azProy()}/_apis/wit/attachments?fileName=${encodeURIComponent(m.nombre)}&api-version=7.1`,
+      const r = await azFetch(`${azBase()}/_apis/wit/attachments?fileName=${encodeURIComponent(m.nombre)}&api-version=7.1`,
         { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: blob });
       adj[m.id] = r.url;
       opsRel.push({ op: 'add', path: '/relations/-', value: { rel: 'AttachedFile', url: r.url, attributes: { comment: `Mockup de ${codigo(h)}: ${m.nombre}` } } });
@@ -1001,16 +1021,18 @@ Notas o dependencias:
     }
     const url = data && data._links && data._links.html && data._links.html.href;
     const areaFinal = (data.fields && data.fields['System.AreaPath']) || (est === 'nueva' ? az.area.trim() || az.proyecto.trim() : (h.azure && h.azure.area) || '');
-    h.azure = { id: data.id, url: /^https:\/\//.test(url || '') ? url : `${azBase()}/${azProy()}/_workitems/edit/${data.id}`,
-      destino: destino(), area: areaFinal, firma: firma(h), subido: new Date().toISOString(), adjuntos: adj };
+    const proyFinal = (data.fields && data.fields['System.TeamProject']) || (est === 'nueva' ? az.proyecto.trim() : String(h.azure.destino || '').split('|')[1] || areaFinal.split('\\')[0]);
+    h.azure = { id: data.id, url: /^https:\/\//.test(url || '') ? url : `${azBase()}/${encodeURIComponent(proyFinal)}/_workitems/edit/${data.id}`,
+      destino: azBase().toLowerCase() + '|' + proyFinal.toLowerCase(), area: areaFinal, firma: firma(h), subido: new Date().toISOString(), adjuntos: adj };
     guardar();
     return est;
   }
   function azFila(h) {
     const est = estadoAz(h);
-    const txt = est === 'nueva' ? (h.azure ? 'Subida a otro proyecto; aún no está en este' : 'Aún no está en Azure DevOps')
-      : est === 'al-dia' ? `En Azure DevOps · #${h.azure.id} · al día (subida el ${fechaHora(h.azure.subido)})`
-      : `En Azure DevOps · #${h.azure.id} · tiene cambios sin subir`;
+    const lugar = est !== 'nueva' && dondeEsta(h) ? ` · ${dondeEsta(h)}` : '';
+    const txt = est === 'nueva' ? (h.azure ? 'Subida en otra organización; aún no está en esta' : 'Aún no está en Azure DevOps')
+      : est === 'al-dia' ? `En Azure DevOps · #${h.azure.id}${lugar} · al día (subida el ${fechaHora(h.azure.subido)})`
+      : `En Azure DevOps · #${h.azure.id}${lugar} · tiene cambios sin subir`;
     const btn = est === 'nueva' ? 'Subir a Azure DevOps' : est === 'cambios' ? 'Actualizar en Azure DevOps' : 'Volver a subir';
     return `<div class="az-row">
       <span class="az-chip ${est}">${txt}</span>
@@ -1023,7 +1045,10 @@ Notas o dependencias:
     const on = azListo();
     $('#az-dot').classList.toggle('on', azConectado());
     $('#az-label').textContent = azConectado() ? `Azure: ${az.org.replace(/^https?:\/\/(dev\.azure\.com\/)?/i, '').replace(/\/+$/, '')}` : 'Conectar Azure DevOps';
-    $('#az-bar').hidden = !azConectado();
+    $('#proj-open').hidden = !azConectado();
+    $('#proj-label').textContent = az.proyecto ? `${az.proyecto}${az.area ? ' › ' + az.area.split('\\').slice(1).join(' › ') : ''}` : 'Elegir proyecto';
+    $('#proj-open').title = az.proyecto ? `Las historias se suben a ${az.area || az.proyecto}${az.iteracion ? ' · ' + az.iteracion.split('\\').pop() : ''}. Clic para cambiar.` : 'Elige el proyecto de Azure DevOps';
+    $('#vista-row').hidden = !on;
     $('#azf-board').disabled = !on;
     document.querySelectorAll('[data-vista]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.vista === vista)));
     const pend = historias.filter(h => estadoAz(h) !== 'al-dia').length;
@@ -1054,7 +1079,7 @@ Notas o dependencias:
   }
   async function subirVarias(lista) {
     if (!azConectado()) { abrirAz(); return; }
-    if (!az.proyecto) { toast('Elige primero el proyecto de Azure DevOps en los filtros.'); $('#azf-proj').focus(); return; }
+    if (!az.proyecto) { abrirProyectos(); toast('Elige primero el proyecto donde se subirán las historias.'); return; }
     if (subiendo || !lista.length) return;
     if (!(await puedeSubir(lista))) return;
     subiendo = true;
@@ -1111,7 +1136,7 @@ Notas o dependencias:
     azStatus('Probando la conexión…');
     try {
       const ps = await listarProyectos();
-      azStatus(ps.length ? `Conexión correcta: ${plural(ps.length, 'proyecto disponible', 'proyectos disponibles')}. Pulsa «Guardar conexión» y elige el proyecto en los filtros.`
+      azStatus(ps.length ? `Conexión correcta: ${plural(ps.length, 'proyecto disponible', 'proyectos disponibles')}. Pulsa «Guardar conexión» para elegir el proyecto.`
         : 'La conexión funciona, pero tu usuario no ve ningún proyecto en esa organización.', ps.length ? 'ok' : 'bad');
     } catch (e) {
       azStatus(e.status === 404 ? 'No se encontró esa organización. Revisa el nombre.' : e.message, 'bad');
@@ -1128,7 +1153,7 @@ Notas o dependencias:
     } catch (e) {}
     azDlg.close();
     render();
-    toast('Conexión guardada. Elige el proyecto y la ruta de área en los filtros.');
+    abrirProyectos();
     await iniciarFiltros();
   });
   $('#az-forget').addEventListener('click', () => {
@@ -1143,7 +1168,18 @@ Notas o dependencias:
   // ---------- filtros de Azure DevOps: proyecto, ruta de área y sprint ----------
   const cacheAz = {}; // proyecto → { areas, iteraciones }
   const opcion = (v, t, sel) => `<option value="${esc(v)}"${sel ? ' selected' : ''}>${esc(t)}</option>`;
-  const infoAz = (msg) => { $('#azf-info').textContent = msg; };
+  const infoAz = (msg) => { const el = $('#azf-info'); el.textContent = msg; el.hidden = !msg; };
+  // ventana «Proyectos»: elegir o cambiar proyecto, área y sprint en cualquier momento
+  const projDlg = $('#proj-dialog');
+  function abrirProyectos() {
+    if (!azConectado()) { abrirAz(); return; }
+    projDlg.showModal();
+    if (!proyectosOk) iniciarFiltros(); // primera vez, o si la carga anterior falló
+    $('#azf-proj').focus();
+  }
+  $('#proj-open').addEventListener('click', abrirProyectos);
+  $('#proj-done').addEventListener('click', () => projDlg.close());
+  projDlg.addEventListener('close', () => render());
   // aplana el árbol de áreas o sprints en rutas «Proyecto\Equipo\Subequipo»
   function aplanar(nodo, ruta = '', nivel = 0, res = []) {
     const p = ruta ? `${ruta}\\${nodo.name}` : nodo.name;
@@ -1151,18 +1187,21 @@ Notas o dependencias:
     (nodo.children || []).forEach(c => aplanar(c, p, nivel + 1, res));
     return res;
   }
+  let proyectosOk = false;
   async function iniciarFiltros() {
     if (!azConectado()) return;
     const sel = $('#azf-proj');
     sel.innerHTML = opcion('', 'Cargando proyectos…');
+    proyectosOk = false;
     try {
       const ps = await listarProyectos();
+      proyectosOk = true;
       sel.innerHTML = opcion('', ps.length ? 'Elige un proyecto' : 'No hay proyectos visibles') + ps.map(p => opcion(p, p, p === az.proyecto)).join('');
       if (az.proyecto && !ps.includes(az.proyecto)) { az.proyecto = ''; az.area = ''; az.iteracion = ''; guardarConfigAz(); }
       if (az.proyecto) await cargarProyecto(false); else { infoAz('Elige el proyecto donde se subirán las historias.'); pintarSelects(); }
     } catch (e) {
       sel.innerHTML = opcion('', 'No se pudieron cargar los proyectos');
-      infoAz(e.message);
+      infoAz(e.message + ' Cierra y vuelve a abrir «Proyectos» para reintentar, o revisa la conexión.');
     }
     render();
   }
@@ -1286,7 +1325,7 @@ Notas o dependencias:
         <td>${esc(t.area.split('\\').slice(1).join(' › ') || '(raíz)')}</td></tr>`; }).join('')}
       </tbody></table>`;
   }
-  $('#azf-board').addEventListener('click', verTablero);
+  $('#azf-board').addEventListener('click', () => { projDlg.close(); verTablero(); $('#az-board').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
   $('#azb-reload').addEventListener('click', verTablero);
   $('#azb-close').addEventListener('click', () => { $('#az-board').hidden = true; });
   $('#azb-q').addEventListener('input', pintarTablero);
