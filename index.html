@@ -115,7 +115,9 @@ button, input, select { font: inherit; color: inherit; }
 .s-ok { color: var(--ok); } .s-okl { color: var(--warn); }
 .real-date { display: block; font-size: 11px; color: var(--muted); font-family: var(--f-body); }
 .real-date.tarde { color: var(--warn); font-weight: 600; }
-.st-note { color: var(--warn); font-size: 11.5px; font-weight: 600; margin-left: 2px; }
+/* «N con atraso» va debajo del nombre para no montarse sobre la barra */
+.st-txt { min-width: 0; line-height: 1.25; overflow-wrap: anywhere; }
+.st-note { display: block; color: var(--warn); font-size: 11.5px; font-weight: 600; }
 .field-note { font-size: 12.5px; color: var(--muted); }
 .field-note.tarde { color: var(--warn); font-weight: 600; } .s-warn { color: var(--warn); } .s-bad { color: var(--bad); } .s-accent { color: var(--accent); } .s-muted { color: var(--muted); }
 
@@ -140,7 +142,8 @@ button, input, select { font: inherit; color: inherit; }
 .how-block { display: grid; gap: 12px; align-content: start; min-width: 0; }
 .how-h { margin: 0; font-size: 13px; font-weight: 600; color: var(--fg); }
 .cmp { display: grid; gap: 14px; }
-.st-row { display: grid; grid-template-columns: 112px minmax(0, 1fr) 64px; gap: 10px; align-items: center; }
+/* ancho fijo para «888 de 888»: así todas las barras empiezan y terminan en el mismo lugar */
+.st-row { display: grid; grid-template-columns: 112px minmax(0, 1fr) 78px; gap: 10px; align-items: center; }
 .cmp-row, .cmp-axis { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 10px; align-items: center; }
 .cmp-in { display: block; text-align: right; padding-right: 8px; line-height: 26px; font-family: var(--f-mono); font-variant-numeric: tabular-nums;
   font-size: 13px; font-weight: 600; color: var(--on-bar); white-space: nowrap; }
@@ -152,7 +155,7 @@ button, input, select { font: inherit; color: inherit; }
 .cmp-bar.plan { background: var(--plan-bar); }
 .cmp-bar.real { background: var(--accent); }
 .cmp-val, .st-val { font-family: var(--f-mono); font-variant-numeric: tabular-nums; font-size: 13px; text-align: right; color: var(--fg); white-space: nowrap; }
-.st-val { color: var(--muted); font-size: 12px; }
+.st-val { color: var(--muted); font-size: 12px; white-space: nowrap; }
 .st-val b { color: var(--fg); font-weight: 500; font-size: 13px; }
 .cmp-axis div { position: relative; height: 14px; }
 .cmp-axis i { position: absolute; transform: translateX(-50%); font-style: normal; font-family: var(--f-mono); font-size: 10.5px; color: var(--muted); }
@@ -163,7 +166,7 @@ button, input, select { font: inherit; color: inherit; }
 .st-track { height: 12px; border-radius: 3px; background: var(--surface-2); }
 .st-bar { height: 100%; border-radius: 0 3px 3px 0; transition: width .4s; }
 @media (max-width: 1180px) { .how-grid { grid-template-columns: minmax(0, 1fr); } }
-@media (max-width: 420px) { .st-row { grid-template-columns: 96px minmax(0, 1fr) 54px; } .cmp-row, .cmp-axis { grid-template-columns: 96px minmax(0, 1fr); } }
+@media (max-width: 420px) { .st-row { grid-template-columns: 96px minmax(0, 1fr) 78px; } .cmp-row, .cmp-axis { grid-template-columns: 96px minmax(0, 1fr); } }
 .empty-note { color: var(--muted); margin: 0; padding: 24px 0; }
 
 .phases { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
@@ -849,7 +852,7 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
           <div class="st-list">
             ${ESTADOS.map(e => `
               <div class="st-row" title="${e.nombre}: ${cnt[e.key]} de ${n} tareas">
-                <span class="st-lbl"><i class="st-ico" style="background:${e.color}" aria-hidden="true">${e.icono}</i>${e.nombre}${e.key === 'done' && doneLate ? `<span class="st-note">(${doneLate} con atraso)</span>` : ''}</span>
+                <span class="st-lbl"><i class="st-ico" style="background:${e.color}" aria-hidden="true">${e.icono}</i><span class="st-txt">${e.nombre}${e.key === 'done' && doneLate ? `<span class="st-note">${doneLate} con atraso</span>` : ''}</span></span>
                 <div class="st-track"><div class="st-bar" style="width:${cnt[e.key] ? Math.max(2, cnt[e.key] / n * 100) : 0}%;background:${e.color}"></div></div>
                 <span class="st-val"><b>${cnt[e.key]}</b> de ${n}</span>
               </div>`).join('')}
