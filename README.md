@@ -29,13 +29,8 @@ Es un único archivo (`index.html`). No necesita servidor ni base de datos.
 
 Aplicación independiente del cronograma para escribir historias de usuario y subirlas al tablero de **Azure DevOps**. Se abre en `https://<tu-usuario>.github.io/<repositorio>/historias.html`.
 
-- **Historias:** código automático (HU-001, HU-002…), título, descripción y criterios de aceptación por **escenario**. Cada criterio tiene:
-  - código (CA-01, CA-02…);
-  - nombre corto del escenario;
-  - **situación**;
-  - **resultado esperado**.
-
-  Las historias antiguas en formato Dado / Cuando / Entonces se convierten solas.
+- **Historias:** código automático (HU-001, HU-002…), título y una **descripción extensa**. El botón *"Insertar guía de descripción"* agrega una estructura con: Como… quiero… para…, contexto, detalle de la funcionalidad, reglas de negocio, fuera de alcance y notas. La aplicación avisa si la descripción es corta.
+- **Criterios de aceptación:** una frase por criterio, numerada CA-01, CA-02…, que dice qué se espera de la funcionalidad. Por ejemplo: *"Como usuario, debo poder acceder al portal con mi usuario y contraseña."* Los criterios escritos en formatos anteriores se convierten solos a una frase.
 - **Validación:** avisa si un criterio está incompleto.
 - **Herramientas:** buscador, duplicar, descarga en Excel (una fila por criterio) y respaldo `.json`.
 - **Azure DevOps:** cada historia se crea como *User Story*, *Product Backlog Item* o *Issue* (según el proceso del proyecto), con:

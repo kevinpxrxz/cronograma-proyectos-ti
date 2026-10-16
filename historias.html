@@ -84,20 +84,25 @@ h1 { margin: 0; font-family: var(--f-display); font-size: clamp(24px, 3.4vw, 34p
 .crit { display: grid; gap: 6px; }
 .crit-sum { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
 /* criterio: CA-01 + nombre del escenario, y debajo situación → resultado esperado */
-.ca { display: grid; gap: 6px; padding: 10px 12px; border-radius: 6px; background: var(--surface-2); }
-.ca-head { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
-.ca-code { font-family: var(--f-mono); font-size: 12px; font-weight: 500; color: var(--muted); }
-.ca-name { font-weight: 600; }
-.ca-name.vacio { color: var(--muted); font-weight: 400; font-style: italic; }
-.ca-body { display: grid; grid-template-columns: 82px minmax(0, 1fr); gap: 4px 10px; }
-.ca-body b { font-size: 12px; letter-spacing: .04em; text-transform: uppercase; padding-top: 1px; }
-.ca-body p { margin: 0; white-space: pre-line; }
-.k-sit { color: var(--k-sit); } .k-res { color: var(--ok); }
-@media (max-width: 520px) { .ca-body { grid-template-columns: minmax(0, 1fr); gap: 0; } .ca-body p { margin-bottom: 4px; } }
+/* criterio: CA-01 + una frase con lo que se espera de la funcionalidad */
+.ca-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+.ca { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 10px; padding: 8px 12px; border-radius: 6px; background: var(--surface-2); }
+.ca-code { font-family: var(--f-mono); font-size: 12px; font-weight: 500; color: var(--accent); padding-top: 1px; }
+.ca p { margin: 0; white-space: pre-line; }
+/* descripción larga: se recorta en la tarjeta y se despliega */
+.desc.larga { display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
+.desc.larga.abierta { display: block; -webkit-line-clamp: unset; }
+.more { border: 0; background: none; color: var(--accent); cursor: pointer; padding: 0; font-size: 13px; justify-self: start; }
+.more:hover { text-decoration: underline; }
+.desc-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.btn-sm { padding: 4px 10px; font-size: 12.5px; }
+.desc-input { min-height: 220px; line-height: 1.5; }
+.desc-count { font-size: 12px; color: var(--muted); }
+.desc-count.corta { color: var(--warn); font-weight: 600; }
 .empty { background: var(--surface); border: 1px dashed var(--line); border-radius: var(--radius); padding: 36px 20px; text-align: center; color: var(--muted); display: grid; gap: 10px; justify-items: center; }
 mark { background: color-mix(in srgb, var(--warn) 30%, transparent); color: inherit; border-radius: 2px; }
 
-dialog { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--fg); padding: 0; width: min(720px, calc(100vw - 32px)); }
+dialog { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--fg); padding: 0; width: min(860px, calc(100vw - 32px)); }
 dialog::backdrop { background: rgb(10 14 20 / .45); }
 .ed { display: grid; gap: 14px; padding: 20px; }
 .ed-top { display: flex; gap: 12px; align-items: center; }
@@ -112,9 +117,10 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
 .crit-ed { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); }
 .crit-ed-top { display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 600; color: var(--muted); }
 .crit-ed-top button { border: 0; background: none; color: var(--bad); cursor: pointer; font-size: 12.5px; padding: 2px 4px; }
-.crit-row { display: grid; grid-template-columns: 82px minmax(0, 1fr); gap: 8px; align-items: start; }
-.crit-row label { font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding-top: 8px; }
-.crit-row textarea { min-height: 38px; padding: 7px 9px; }
+.crit-row { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 8px; align-items: start; }
+.crit-row label { font-family: var(--f-mono); font-size: 12px; font-weight: 500; color: var(--accent); padding-top: 9px; }
+.crit-row textarea { min-height: 42px; padding: 8px 10px; }
+.crit-row button { border: 0; background: none; color: var(--bad); cursor: pointer; font-size: 12.5px; padding: 9px 4px 0; }
 .err { color: var(--bad); margin: 0; font-size: 13px; }
 .ed-foot { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 .ed-foot .right { display: flex; gap: 8px; margin-left: auto; }
@@ -142,7 +148,7 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
 .az-row .btn { padding: 5px 10px; font-size: 13px; margin-left: auto; }
 @media (max-width: 560px) { .grid2 { grid-template-columns: minmax(0, 1fr); } .az-sync { margin-left: 0; } }
 @media (max-width: 640px) { .wrap { padding-inline: 16px; } }
-@media (max-width: 520px) { .crit-row { grid-template-columns: minmax(0, 1fr); gap: 2px; } .crit-row label { padding-top: 0; } }
+@media (max-width: 520px) { .crit-row { grid-template-columns: minmax(0, 1fr) auto; } .crit-row label { grid-column: 1 / -1; padding-top: 0; } }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
@@ -186,11 +192,15 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
     <div class="ed-top"><h3 id="ed-title">Nueva historia</h3><span class="code" id="ed-code"></span></div>
     <div class="field"><label for="titulo">Título de la historia</label>
       <input id="titulo" type="text" maxlength="160" placeholder="Ej.: Recuperar contraseña por correo"></div>
-    <div class="field"><label for="desc">Descripción</label>
-      <textarea id="desc" rows="4" maxlength="4000" placeholder="Ej.: Como cliente quiero recuperar mi contraseña desde el correo para volver a entrar sin llamar a soporte."></textarea></div>
+    <div class="field">
+      <div class="desc-head"><label for="desc">Descripción</label>
+        <button class="btn btn-sm" type="button" id="guia">Insertar guía de descripción</button></div>
+      <textarea id="desc" class="desc-input" rows="12" maxlength="20000" placeholder="Describe la historia con detalle: quién la necesita, qué debe hacer la funcionalidad, por qué, reglas de negocio y qué queda fuera. Pulsa «Insertar guía de descripción» para usar una estructura."></textarea>
+      <span class="desc-count" id="desc-count"></span>
+    </div>
     <div class="crit-head">
       <h4>Criterios de aceptación</h4>
-      <span class="hint">Cada criterio describe una situación y el resultado esperado.</span>
+      <span class="hint">Una frase por criterio que diga qué se espera de la funcionalidad. Ej.: «Como usuario, debo poder acceder al portal con mi usuario y contraseña.»</span>
     </div>
     <div class="crit-list" id="crit-list"></div>
     <button class="btn" type="button" id="add-crit">+ Agregar criterio</button>
@@ -251,22 +261,38 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
   // ---------- datos (localStorage de este navegador) ----------
   let historias = [];
   let ultimoNumero = 0; // nunca se reutiliza un código, aunque se borre la historia
-  // Formato de criterio: { nombre, situacion, resultado }.
-  // Los criterios antiguos (Dado / Cuando / Entonces) se convierten sin perder texto.
+  // Formato de criterio: { texto } — una frase con lo que se espera de la funcionalidad.
+  // Los formatos anteriores (Dado/Cuando/Entonces o escenario/situación/resultado)
+  // se convierten a una sola frase sin perder texto.
+  const unir = partes => partes.map(p => String(p || '').trim()).filter(Boolean).join(' ');
   const normCrit = c => {
     c = c || {};
+    if (typeof c === 'string') return { texto: c.trim() };
+    if (c.texto !== undefined) return { texto: String(c.texto || '').trim() };
     if (c.situacion !== undefined || c.resultado !== undefined || c.nombre !== undefined) {
-      return { nombre: String(c.nombre || ''), situacion: String(c.situacion || ''), resultado: String(c.resultado || '') };
+      return { texto: unir([c.nombre && c.nombre.trim() + ':', c.situacion && c.situacion.replace(/\.?\s*$/, '.'), c.resultado]) };
     }
-    const dado = String(c.dado || '').trim(), cuando = String(c.cuando || '').trim();
-    return {
-      nombre: '',
-      situacion: [dado && 'Dado ' + dado, cuando && 'cuando ' + cuando].filter(Boolean).join(', '),
-      resultado: String(c.entonces || '').trim()
-    };
+    return { texto: unir([c.dado && 'Dado ' + c.dado + ',', c.cuando && 'cuando ' + c.cuando + ',', c.entonces && 'entonces ' + c.entonces]) };
   };
   const caCodigo = i => 'CA-' + String(i + 1).padStart(2, '0');
-  const caTitulo = (c, i) => caCodigo(i) + (c.nombre ? ' · ' + c.nombre : '');
+  const GUIA = `Como [tipo de usuario], quiero [lo que necesita hacer] para [el beneficio que obtiene].
+
+Contexto:
+[Por qué se necesita esta funcionalidad, cómo se hace hoy y a quién afecta.]
+
+Detalle de la funcionalidad:
+- [Qué debe permitir hacer el sistema, paso a paso.]
+- [Pantallas, campos o datos que intervienen.]
+
+Reglas de negocio:
+- [Validaciones, límites, permisos y mensajes al usuario.]
+
+Fuera de alcance:
+- [Lo que esta historia no incluye.]
+
+Notas o dependencias:
+- [Integraciones, otros equipos, supuestos.]`;
+  const DESC_MIN = 300; // largo recomendado para una descripción completa
   function cargar() {
     try {
       const d = JSON.parse(localStorage.getItem(KEY) || '{}');
@@ -295,7 +321,7 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
     $('#sub').textContent = `${todas.length === 1 ? '1 historia' : todas.length + ' historias'} · ${nCrit === 1 ? '1 criterio de aceptación' : nCrit + ' criterios de aceptación'}`;
     $('#xls').disabled = !todas.length;
     const s = q();
-    const lista = s ? todas.filter(h => [codigo(h), h.titulo, h.descripcion, ...(h.criterios || []).flatMap((c, i) => [caCodigo(i), c.nombre, c.situacion, c.resultado])]
+    const lista = s ? todas.filter(h => [codigo(h), h.titulo, h.descripcion, ...(h.criterios || []).flatMap((c, i) => [caCodigo(i), c.texto])]
       .some(x => String(x || '').toLowerCase().includes(s))) : todas;
     $('#count').textContent = s ? `${lista.length} de ${todas.length} coinciden con «${$('#q').value.trim()}»` : '';
     const el = $('#list');
@@ -317,17 +343,17 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
             <button class="btn" type="button" data-dup="${esc(h.id)}" title="Crear una copia para usarla de base">Duplicar</button>
           </div>
         </div>
-        ${h.descripcion ? `<p class="desc">${resaltar(h.descripcion, s)}</p>` : '<p class="desc vacia">Sin descripción.</p>'}
+        ${h.descripcion
+          ? (() => {
+              const larga = h.descripcion.split('\n').length > 6 || h.descripcion.length > 600;
+              const abierta = larga && (abiertas.has(h.id) || (s && h.descripcion.toLowerCase().includes(s)));
+              return `<p class="desc${larga ? ' larga' : ''}${abierta ? ' abierta' : ''}">${resaltar(h.descripcion, s)}</p>
+                ${larga ? `<button class="more" type="button" data-more="${esc(h.id)}">${abierta ? 'Ver menos' : 'Ver descripción completa'}</button>` : ''}`;
+            })()
+          : '<p class="desc vacia">Sin descripción.</p>'}
         <div class="crit">
           <span class="crit-sum">${cs.length ? (cs.length === 1 ? '1 criterio de aceptación' : cs.length + ' criterios de aceptación') : 'Sin criterios de aceptación todavía'}</span>
-          ${cs.map((c, i) => `<div class="ca">
-            <div class="ca-head"><span class="ca-code">${resaltar(caCodigo(i), s)}</span>
-              ${c.nombre ? `<span class="ca-name">${resaltar(c.nombre, s)}</span>` : '<span class="ca-name vacio">Escenario sin nombre</span>'}</div>
-            <div class="ca-body">
-              <b class="k-sit">Situación</b><p>${resaltar(c.situacion, s)}</p>
-              <b class="k-res">Resultado</b><p>${resaltar(c.resultado, s)}</p>
-            </div>
-          </div>`).join('')}
+          ${cs.length ? `<ol class="ca-list">${cs.map((c, i) => `<li class="ca"><span class="ca-code">${resaltar(caCodigo(i), s)}</span><p>${resaltar(c.texto, s)}</p></li>`).join('')}</ol>` : ''}
         </div>
         ${azFila(h)}
       </article>`;
@@ -335,21 +361,48 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
     renderAzBarra();
   }
   $('#q').addEventListener('input', render);
+  const abiertas = new Set();
+  $('#list').addEventListener('click', ev => {
+    const b = ev.target.closest('[data-more]');
+    if (!b) return;
+    const id = b.dataset.more;
+    abiertas.has(id) ? abiertas.delete(id) : abiertas.add(id);
+    render();
+  });
 
   // ---------- editor ----------
   const dlg = $('#editor');
   let editId = null;
-  const critRow = (c, i) => `<div class="crit-ed" data-crit>
-      <div class="crit-ed-top"><span>${caCodigo(i)}</span><button type="button" data-crit-del>Quitar</button></div>
-      <div class="crit-row"><label>Escenario</label><input type="text" maxlength="120" data-k="nombre" aria-label="Nombre del escenario ${caCodigo(i)}" placeholder="Nombre corto. Ej.: Correo no registrado" value="${esc(c.nombre || '')}"></div>
-      <div class="crit-row"><label class="k-sit">Situación</label><textarea rows="2" data-k="situacion" aria-label="Situación ${caCodigo(i)}" placeholder="Qué pasa o qué hace el usuario. Ej.: pide recuperar la contraseña con un correo que no existe.">${esc(c.situacion || '')}</textarea></div>
-      <div class="crit-row"><label class="k-res">Resultado</label><textarea rows="2" data-k="resultado" aria-label="Resultado esperado ${caCodigo(i)}" placeholder="Qué debe pasar. Ej.: ve un mensaje genérico, sin revelar si el correo existe.">${esc(c.resultado || '')}</textarea></div>
+  const EJEMPLOS = [
+    'Como usuario, debo poder acceder al portal con mi usuario y contraseña.',
+    'Como usuario, debo ver un mensaje claro si mi usuario o contraseña son incorrectos.',
+    'Como administrador, debo poder bloquear el acceso de un usuario.'
+  ];
+  const critRow = (c, i) => `<div class="crit-row" data-crit>
+      <label for="ca-${i}">${caCodigo(i)}</label>
+      <textarea id="ca-${i}" rows="2" data-k="texto" placeholder="Ej.: ${esc(EJEMPLOS[i % EJEMPLOS.length])}">${esc(c.texto || '')}</textarea>
+      <button type="button" data-crit-del aria-label="Quitar ${caCodigo(i)}">Quitar</button>
     </div>`;
   const leerCriterios = () => [...document.querySelectorAll('#crit-list [data-crit]')].map(r => ({
-    nombre: r.querySelector('[data-k="nombre"]').value.trim(),
-    situacion: r.querySelector('[data-k="situacion"]').value.trim(),
-    resultado: r.querySelector('[data-k="resultado"]').value.trim()
+    texto: r.querySelector('[data-k="texto"]').value.trim()
   }));
+  function contarDesc() {
+    const n = $('#desc').value.trim().length;
+    const el = $('#desc-count');
+    el.textContent = n
+      ? `${n} caracteres${n < DESC_MIN ? ` · una descripción completa suele tener más de ${DESC_MIN}: agrega contexto, detalle y reglas de negocio` : ''}`
+      : '';
+    el.className = 'desc-count' + (n && n < DESC_MIN ? ' corta' : '');
+  }
+  $('#desc').addEventListener('input', contarDesc);
+  $('#guia').addEventListener('click', () => {
+    const t = $('#desc');
+    t.value = t.value.trim() ? t.value.replace(/\s*$/, '') + '\n\n' + GUIA : GUIA;
+    contarDesc();
+    t.focus();
+    const i = t.value.indexOf('[tipo de usuario]');
+    if (i >= 0) t.setSelectionRange(i, i + '[tipo de usuario]'.length);
+  });
   const pintar = cs => { $('#crit-list').innerHTML = cs.map(critRow).join(''); };
   function abrir(id, base) {
     const h = id ? historias.find(x => x.id === id) : null;
@@ -359,6 +412,7 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
     $('#ed-code').textContent = h ? codigo(h) : codigo({ numero: ultimoNumero + 1 });
     $('#titulo').value = src.titulo ? (base && !h ? src.titulo + ' (copia)' : src.titulo) : '';
     $('#desc').value = src.descripcion || '';
+    contarDesc();
     pintar(src.criterios && src.criterios.length ? src.criterios : [{}]);
     $('#err').hidden = true;
     const del = $('#del');
@@ -368,7 +422,7 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
   }
   $('#add-crit').addEventListener('click', () => {
     const cs = leerCriterios(); cs.push({}); pintar(cs);
-    const last = [...document.querySelectorAll('#crit-list [data-k="nombre"]')].pop();
+    const last = [...document.querySelectorAll('#crit-list [data-k="texto"]')].pop();
     if (last) last.focus();
   });
   $('#crit-list').addEventListener('click', ev => {
@@ -397,9 +451,7 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
     const err = m => { $('#err').textContent = m; $('#err').hidden = false; };
     const titulo = $('#titulo').value.trim();
     if (!titulo) return err('Escribe el título de la historia.');
-    const cs = leerCriterios().filter(c => c.nombre || c.situacion || c.resultado);
-    const inc = cs.findIndex(c => !c.situacion || !c.resultado);
-    if (inc >= 0) return err(`Completa la situación y el resultado del ${caCodigo(inc)}${cs[inc].nombre ? ' («' + cs[inc].nombre + '»)' : ''}, o quítalo.`);
+    const cs = leerCriterios().filter(c => c.texto);
     const prev = editId ? historias.find(x => x.id === editId) : null;
     const h = {
       id: prev ? prev.id : genId(),
@@ -467,7 +519,7 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
   }
   const aHtml = s => esc(s).replace(/\n/g, '<br>');
   const criteriosHtml = cs => cs.length
-    ? cs.map((c, i) => `<p><b>${aHtml(caTitulo(c, i))}</b><br><b>Situación:</b> ${aHtml(c.situacion)}<br><b>Resultado esperado:</b> ${aHtml(c.resultado)}</p>`).join('')
+    ? cs.map((c, i) => `<p><b>${caCodigo(i)}.</b> ${aHtml(c.texto)}</p>`).join('')
     : '';
   function operaciones(h, crear) {
     const ops = [{ op: 'add', path: '/fields/System.Title', value: h.titulo }];
@@ -662,18 +714,18 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
       wb.creator = 'Historias de Usuario'; wb.created = new Date();
       const ws = wb.addWorksheet('Historias de usuario', { views: [{ state: 'frozen', ySplit: 3 }],
         pageSetup: { orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
-      ws.columns = [{ width: 10 }, { width: 34 }, { width: 46 }, { width: 6 }, { width: 34 }, { width: 34 }, { width: 38 }];
-      ws.mergeCells('A1:G1');
+      ws.columns = [{ width: 10 }, { width: 32 }, { width: 70 }, { width: 9 }, { width: 70 }];
+      ws.mergeCells('A1:E1');
       ws.getCell('A1').value = 'Historias de usuario';
       ws.getCell('A1').font = { size: 18, bold: true };
       const hs = historias.slice().sort((a, b) => (a.numero || 0) - (b.numero || 0));
-      ws.mergeCells('A2:G2');
+      ws.mergeCells('A2:E2');
       ws.getCell('A2').value = `${hs.length} historias · generado el ${fechaLarga()}`;
       ws.getCell('A2').font = { color: { argb: 'FF5A6675' } };
       const line = { style: 'thin', color: { argb: 'FFD5DBE3' } };
       const border = { top: line, bottom: line, left: line, right: line };
       const hr = ws.getRow(3);
-      hr.values = ['Código', 'Historia', 'Descripción', 'Criterio', 'Escenario', 'Situación', 'Resultado esperado'];
+      hr.values = ['Código', 'Historia', 'Descripción', 'Criterio', 'Criterio de aceptación'];
       hr.eachCell(c => { c.font = { bold: true, color: { argb: 'FFFFFFFF' } }; c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F2A37' } }; c.alignment = { horizontal: 'center', vertical: 'middle' }; c.border = border; });
       let r = 4;
       hs.forEach((h, i) => {
@@ -681,7 +733,7 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
         const fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: i % 2 ? 'FFF5F7FA' : 'FFFFFFFF' } };
         cs.forEach((c, j) => {
           const row = ws.getRow(r++);
-          row.values = [codigo(h), h.titulo || '', h.descripcion || '', c ? caCodigo(j) : '', c ? c.nombre : '(sin criterios)', c ? c.situacion : '', c ? c.resultado : ''];
+          row.values = [codigo(h), h.titulo || '', h.descripcion || '', c ? caCodigo(j) : '', c ? c.texto : '(sin criterios)'];
           row.eachCell({ includeEmpty: true }, cell => { cell.border = border; cell.fill = fill; cell.alignment = { vertical: 'top', wrapText: true }; });
           row.getCell(1).font = { bold: true, color: { argb: 'FF2453C9' } };
           row.getCell(4).alignment = { vertical: 'top', horizontal: 'center' };
