@@ -138,6 +138,13 @@ mark { background: color-mix(in srgb, var(--warn) 30%, transparent); color: inhe
 .sug-list li { display: flex; gap: 10px; align-items: flex-start; padding: 7px 10px; border-radius: 6px; background: var(--surface); }
 .sug-list li p { margin: 0; flex: 1; }
 .sug-list li .btn { padding: 3px 9px; font-size: 12px; flex: none; }
+.prop { display: grid; gap: 6px; padding: 8px 10px; border-radius: 6px; background: var(--surface-2); }
+.prop p { margin: 0; }
+.prop-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.prop-btns .btn, .sug-list .btns .btn { padding: 3px 9px; font-size: 12px; }
+.aplicado { color: var(--ok); font-weight: 600; font-size: 12.5px; }
+.sug-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.sug-list .btns { display: flex; gap: 6px; flex: none; flex-wrap: wrap; justify-content: flex-end; }
 .preg-list li { padding-left: 16px; position: relative; }
 .preg-list li::before { content: "?"; position: absolute; left: 2px; color: var(--ia); font-weight: 700; }
 .ia-global { background: var(--surface); border: 1px solid color-mix(in srgb, var(--ia) 40%, var(--line)); border-radius: var(--radius); padding: 12px 16px; display: grid; gap: 8px; }
@@ -624,9 +631,13 @@ Notas o dependencias:
     if (m && m._url) URL.revokeObjectURL(m._url);
     pintarImgs();
   });
-  function abrir(id, base) {
+  // extra (desde la revisión con IA): { texto } agrega un criterio ya escrito para editarlo;
+  // { seleccionar } marca en la descripción el texto ambiguo; { ia } recuerda qué sugerencia se está aplicando
+  let iaPendiente = null;
+  function abrir(id, base, extra) {
     const h = id ? historias.find(x => x.id === id) : null;
     editId = h ? h.id : null;
+    iaPendiente = extra && extra.ia && h ? { ...extra.ia, hid: h.id, alDia: revActual(h) } : null;
     const src = h || base || {};
     $('#ed-title').textContent = h ? 'Editar historia' : base ? 'Nueva historia (copia)' : 'Nueva historia';
     $('#ed-code').textContent = h ? codigo(h) : codigo({ numero: ultimoNumero + 1 });
@@ -641,9 +652,27 @@ Notas o dependencias:
     const del = $('#del');
     del.hidden = !h; del.classList.remove('armed'); del.textContent = 'Eliminar';
     dlg.showModal();
-    $('#titulo').focus();
+    if (extra && extra.texto) {
+      const cs = leerCriterios();
+      if (cs.length === 1 && !cs[0].texto) cs.pop();
+      cs.push({ texto: extra.texto }); pintar(cs);
+      const last = [...document.querySelectorAll('#crit-list [data-k="texto"]')].pop();
+      last.focus(); last.setSelectionRange(last.value.length, last.value.length);
+      last.scrollIntoView({ block: 'center' });
+    } else if (extra && extra.seleccionar !== undefined) {
+      const d = $('#desc');
+      d.focus();
+      const i = extra.seleccionar ? d.value.indexOf(extra.seleccionar) : -1;
+      if (i >= 0) {
+        d.setSelectionRange(i, i + extra.seleccionar.length);
+        // lleva el texto seleccionado a la vista dentro del cuadro
+        const lineas = d.value.slice(0, i).split('\n').length;
+        d.scrollTop = Math.max(0, (lineas - 3) * parseFloat(getComputedStyle(d).lineHeight || '21'));
+      }
+      d.scrollIntoView({ block: 'center' });
+    } else $('#titulo').focus();
   }
-  dlg.addEventListener('close', () => { edImgs.forEach(m => m._url && URL.revokeObjectURL(m._url)); edImgs = []; });
+  dlg.addEventListener('close', () => { edImgs.forEach(m => m._url && URL.revokeObjectURL(m._url)); edImgs = []; iaPendiente = null; });
   $('#add-crit').addEventListener('click', () => {
     const cs = leerCriterios(); cs.push({}); pintar(cs);
     const last = [...document.querySelectorAll('#crit-list [data-k="texto"]')].pop();
@@ -698,6 +727,19 @@ Notas o dependencias:
       azure: prev ? (prev.azure || null) : null,      // se conserva el vínculo con Azure para actualizar el mismo elemento
       revision: prev ? (prev.revision || null) : null // la revisión queda marcada como desactualizada si cambió el contenido
     };
+    // si se abrió desde una sugerencia de la IA, se marca como resuelta
+    const p = iaPendiente;
+    if (p && p.hid === h.id && h.revision) {
+      if (p.tipo === 'sug') {
+        const k = h.revision.sugeridos.indexOf(p.texto);
+        if (k >= 0) h.revision.sugeridos.splice(k, 1);
+      } else if (p.tipo === 'hall' && h.revision.hallazgos[p.i]) {
+        h.revision.hallazgos[p.i].aplicado = 'Criterio agregado al editar la historia';
+      } else if (p.tipo === 'desc' && h.revision.hallazgos[p.i] && (!p.cita || !h.descripcion.includes(p.cita))) {
+        h.revision.hallazgos[p.i].aplicado = 'Corregido en la descripción';
+      }
+      if (p.alDia) h.revision.firma = firma(h);
+    }
     if (prev) historias = historias.map(x => x.id === h.id ? h : x); else historias.push(h);
     btn.disabled = false;
     if (!guardar()) return;
@@ -987,7 +1029,10 @@ Notas o dependencias:
   }
   const iaListo = () => !!iaKey;
   const revActual = h => !!(h.revision && h.revision.firma === firma(h));
-  const altasPendientes = h => (h.revision ? h.revision.hallazgos || [] : []).filter(x => x.severidad === 'alta' && !x.descartado).length;
+  const altasPendientes = h => (h.revision ? h.revision.hallazgos || [] : []).filter(x => x.severidad === 'alta' && !x.descartado && !x.aplicado).length;
+  // criterio listo para usar de un hallazgo; en revisiones antiguas (sin ese campo) se usa la sugerencia si apunta a un CA
+  const caDeUbicacion = (h, x) => { const m = String(x.ubicacion || '').match(/CA-?\s*(\d+)/i); const i = m ? Number(m[1]) - 1 : -1; return i >= 0 && i < (h.criterios || []).length ? i : -1; };
+  const propuesta = (h, x) => (x.criterio_propuesto !== undefined ? x.criterio_propuesto : (caDeUbicacion(h, x) >= 0 ? x.sugerencia : '') || '').trim();
   let sdk = null;
   async function cliente() {
     if (!sdk) sdk = import(SDK_URL).then(m => m.default);
@@ -1012,6 +1057,7 @@ Cómo responder:
 - En «cita» copia el texto exacto de la historia donde está el problema. Si el problema es algo que falta, deja «cita» vacía.
 - En «ubicacion» indica: Descripción, CA-01, CA-02…, Mockup 1, Mockup 2… o General.
 - En «sugerencia» propone una redacción concreta que elimine la ambigüedad.
+- En «criterio_propuesto» escribe, cuando aplique, el criterio de aceptación listo para usar que resuelve el problema, en el formato del equipo (una sola frase, por ejemplo «Como usuario, debo poder…»). Si el problema está en un criterio existente (ubicación CA-xx), escribe la versión corregida completa de ese criterio. Si el hallazgo no se resuelve con un criterio (por ejemplo, solo afecta la descripción), déjalo vacío.
 - Usa severidad «alta» cuando el problema impide desarrollar o probar la historia, «media» cuando puede causar retrabajo y «baja» para mejoras de redacción.
 - Los criterios sugeridos siguen el formato del equipo: una sola frase que dice qué se espera de la funcionalidad, por ejemplo «Como usuario, debo poder acceder al portal con mi usuario y contraseña.». Sugiere solo los que faltan; no repitas los existentes.
 - En «preguntas» pon lo que el equipo debe preguntarle al negocio para cerrar las ambigüedades.
@@ -1030,11 +1076,12 @@ Cómo responder:
           resumen: { type: 'string' },
           hallazgos: { type: 'array', items: {
             type: 'object', additionalProperties: false,
-            required: ['tipo', 'severidad', 'ubicacion', 'cita', 'problema', 'sugerencia'],
+            required: ['tipo', 'severidad', 'ubicacion', 'cita', 'problema', 'sugerencia', 'criterio_propuesto'],
             properties: {
               tipo: { type: 'string', enum: ['Término ambiguo', 'Criterio no verificable', 'Falta información', 'Contradicción', 'Caso no cubierto', 'Alcance poco claro', 'Diferencia con el mockup', 'Otro'] },
               severidad: { type: 'string', enum: ['alta', 'media', 'baja'] },
-              ubicacion: { type: 'string' }, cita: { type: 'string' }, problema: { type: 'string' }, sugerencia: { type: 'string' }
+              ubicacion: { type: 'string' }, cita: { type: 'string' }, problema: { type: 'string' }, sugerencia: { type: 'string' },
+              criterio_propuesto: { type: 'string' }
             } } },
           criterios_sugeridos: { type: 'array', items: { type: 'string' } },
           preguntas: { type: 'array', items: { type: 'string' } }
@@ -1161,7 +1208,7 @@ Cómo responder:
     const actual = revActual(h);
     if (!rev) return `<div class="ia-row"><div class="ia-head"><span class="ia-chip"><span class="k">IA</span>Sin revisar</span>
       <div class="right"><button class="btn ia-btn" type="button" data-ia-rev="${esc(h.id)}">Revisar con IA</button></div></div></div>`;
-    const vivos = (rev.hallazgos || []).filter(x => !x.descartado);
+    const vivos = (rev.hallazgos || []).filter(x => !x.descartado && !x.aplicado);
     const altas = vivos.filter(x => x.severidad === 'alta').length;
     const abierto = iaAbiertas.has(h.id);
     const resumen = vivos.length ? `${plural(vivos.length, 'ambigüedad', 'ambigüedades')}${altas ? ` · ${altas} importante${altas === 1 ? '' : 's'}` : ''}` : 'Sin ambigüedades pendientes';
@@ -1178,15 +1225,31 @@ Cómo responder:
       </div>
       ${abierto ? `<div class="ia-body">
         ${rev.resumen ? `<p class="ia-res">${esc(rev.resumen)}</p>` : ''}
-        ${hall.length ? `<ul class="hall-list">${hall.map(({ x, i }) => `<li class="hall ${esc(x.severidad)}${x.descartado ? ' descartado' : ''}">
+        ${hall.length ? `<ul class="hall-list">${hall.map(({ x, i }) => {
+          const prop = propuesta(h, x);
+          const ca = caDeUbicacion(h, x);
+          const ref = `${esc(h.id)}|${i}`;
+          return `<li class="hall ${esc(x.severidad)}${x.descartado || x.aplicado ? ' descartado' : ''}">
           <div class="hall-top"><span class="sev ${esc(x.severidad)}">${esc(x.severidad)}</span><span class="tipo">${esc(x.tipo)}</span><span class="ubic">${esc(x.ubicacion)}</span>
-            <button type="button" data-ia-desc="${esc(h.id)}|${i}">${x.descartado ? 'Restaurar' : 'Descartar'}</button></div>
+            ${x.aplicado ? '' : `<button type="button" data-ia-desc="${ref}">${x.descartado ? 'Restaurar' : 'Descartar'}</button>`}</div>
           ${x.cita ? `<q>${esc(x.cita)}</q>` : ''}
           <p>${esc(x.problema)}</p>
           ${x.sugerencia ? `<p class="sug"><b>Sugerencia:</b> ${esc(x.sugerencia)}</p>` : ''}
-        </li>`).join('')}</ul>` : ''}
-        ${(rev.sugeridos || []).length ? `<span class="sec-sum">Criterios sugeridos</span>
-          <ul class="sug-list">${rev.sugeridos.map((t, i) => `<li><p>${esc(t)}</p><button class="btn" type="button" data-ia-add="${esc(h.id)}|${i}">+ Agregar</button></li>`).join('')}</ul>` : ''}
+          ${x.aplicado ? `<p class="aplicado">✓ ${esc(x.aplicado)}</p>`
+            : prop && !x.descartado ? `<div class="prop"><p><b>Criterio propuesto:</b> ${esc(prop)}</p><div class="prop-btns">
+              ${ca >= 0 ? `<button class="btn primary" type="button" data-ia-rep="${ref}">Reemplazar ${caCodigo(ca)}</button>` : ''}
+              <button class="btn${ca >= 0 ? '' : ' primary'}" type="button" data-ia-hadd="${ref}">${ca >= 0 ? 'Agregar como nuevo' : '+ Agregar criterio'}</button>
+              <button class="btn" type="button" data-ia-hedit="${ref}">Editar y agregar</button>
+            </div></div>` : ''}
+          ${!x.aplicado && !x.descartado && /^descrip/i.test(String(x.ubicacion || '')) ? `<div class="prop-btns">
+              <button class="btn${prop ? '' : ' primary'}" type="button" data-ia-dfix="${ref}">Corregir en la descripción</button></div>` : ''}
+        </li>`;
+        }).join('')}</ul>` : ''}
+        ${(rev.sugeridos || []).length ? `<div class="sug-head"><span class="sec-sum">Criterios sugeridos (${rev.sugeridos.length})</span>
+            ${rev.sugeridos.length > 1 ? `<button class="btn btn-sm primary" type="button" data-ia-add-all="${esc(h.id)}">Agregar todos</button>` : ''}</div>
+          <ul class="sug-list">${rev.sugeridos.map((t, i) => `<li><p>${esc(t)}</p><span class="btns">
+            <button class="btn primary" type="button" data-ia-add="${esc(h.id)}|${i}">+ Agregar</button>
+            <button class="btn" type="button" data-ia-sedit="${esc(h.id)}|${i}">Editar y agregar</button></span></li>`).join('')}</ul>` : ''}
         ${(rev.preguntas || []).length ? `<span class="sec-sum">Preguntas para el negocio</span>
           <ul class="preg-list">${rev.preguntas.map(t => `<li>${esc(t)}</li>`).join('')}</ul>` : ''}
       </div>` : ''}
@@ -1234,20 +1297,67 @@ Cómo responder:
       if (f) { f.descartado = !f.descartado; guardar(); render(); }
       return;
     }
+    // aplicar sugerencias de la IA a los criterios
+    const ref = attr => { const [hid, i] = b.dataset[attr].split('|'); const h = historias.find(x => x.id === hid); return { h, i: Number(i) }; };
     if ((b = t.closest('[data-ia-add]'))) {
-      const [hid, i] = b.dataset.iaAdd.split('|');
-      const h = historias.find(x => x.id === hid);
+      const { h, i } = ref('iaAdd');
       if (!h || !h.revision) return;
-      const [texto] = h.revision.sugeridos.splice(Number(i), 1);
+      const texto = h.revision.sugeridos[i];
       if (!texto) return;
-      const alDia = revActual(h);
-      h.criterios.push({ texto });
-      h.actualizado = hoy();
-      if (alDia) h.revision.firma = firma(h); // el cambio viene de la propia revisión: sigue al día
-      guardar(); render();
-      toast(`Criterio agregado a ${codigo(h)} como ${caCodigo(h.criterios.length - 1)}.`);
+      aplicarIA(h, () => { h.revision.sugeridos.splice(i, 1); h.criterios.push({ texto }); });
+      return toast(`Criterio agregado a ${codigo(h)} como ${caCodigo(h.criterios.length - 1)}.`);
+    }
+    if ((b = t.closest('[data-ia-add-all]'))) {
+      const h = historias.find(x => x.id === b.dataset.iaAddAll);
+      if (!h || !h.revision || !h.revision.sugeridos.length) return;
+      const n = h.revision.sugeridos.length;
+      aplicarIA(h, () => { h.revision.sugeridos.forEach(texto => h.criterios.push({ texto })); h.revision.sugeridos = []; });
+      return toast(`${plural(n, 'criterio agregado', 'criterios agregados')} a ${codigo(h)}.`);
+    }
+    if ((b = t.closest('[data-ia-rep]'))) {
+      const { h, i } = ref('iaRep');
+      const x = h && h.revision && h.revision.hallazgos[i];
+      const ca = x ? caDeUbicacion(h, x) : -1;
+      const texto = x ? propuesta(h, x) : '';
+      if (ca < 0 || !texto) return;
+      aplicarIA(h, () => { h.criterios[ca] = { texto }; x.aplicado = `${caCodigo(ca)} reemplazado con el criterio propuesto`; });
+      return toast(`${caCodigo(ca)} de ${codigo(h)} actualizado.`);
+    }
+    if ((b = t.closest('[data-ia-hadd]'))) {
+      const { h, i } = ref('iaHadd');
+      const x = h && h.revision && h.revision.hallazgos[i];
+      const texto = x ? propuesta(h, x) : '';
+      if (!texto) return;
+      aplicarIA(h, () => { h.criterios.push({ texto }); x.aplicado = `Agregado como ${caCodigo(h.criterios.length - 1)}`; });
+      return toast(`Criterio agregado a ${codigo(h)} como ${caCodigo(h.criterios.length - 1)}.`);
+    }
+    if ((b = t.closest('[data-ia-sedit]'))) {
+      const { h, i } = ref('iaSedit');
+      const texto = h && h.revision && h.revision.sugeridos[i];
+      if (texto) abrir(h.id, null, { texto, ia: { tipo: 'sug', i, texto } });
+      return;
+    }
+    if ((b = t.closest('[data-ia-hedit]'))) {
+      const { h, i } = ref('iaHedit');
+      const x = h && h.revision && h.revision.hallazgos[i];
+      const texto = x ? propuesta(h, x) : '';
+      if (texto) abrir(h.id, null, { texto, ia: { tipo: 'hall', i, texto } });
+      return;
+    }
+    if ((b = t.closest('[data-ia-dfix]'))) {
+      const { h, i } = ref('iaDfix');
+      const x = h && h.revision && h.revision.hallazgos[i];
+      if (x) abrir(h.id, null, { seleccionar: x.cita || '', ia: { tipo: 'desc', i, cita: x.cita || '' } });
     }
   });
+  // un cambio que viene de la propia revisión no la deja desactualizada
+  function aplicarIA(h, cambio) {
+    const alDia = revActual(h);
+    cambio();
+    h.actualizado = hoy();
+    if (alDia) h.revision.firma = firma(h);
+    guardar(); render();
+  }
 
   // diálogo de la clave de IA
   const iaDlg = $('#ia-dialog');

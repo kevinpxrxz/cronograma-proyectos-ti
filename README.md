@@ -37,7 +37,13 @@ Aplicación independiente del cronograma para escribir historias de usuario y su
   - casos no cubiertos y diferencias con los mockups;
   - historias duplicadas o en conflicto entre sí.
 
-  Cada hallazgo trae severidad, cita, problema y sugerencia de redacción. También propone criterios faltantes (que se agregan con un clic) y preguntas para el negocio. Antes de subir a Azure DevOps, la aplicación avisa si quedan ambigüedades importantes o historias sin revisar. Sin clave, *"Copiar para claude.ai"* copia las instrucciones y las historias para revisarlas en una conversación de claude.ai.
+  Cada hallazgo trae severidad, cita, problema, sugerencia y, cuando aplica, un **criterio ya redactado**. Las ambigüedades se resuelven desde la misma tarjeta:
+  - **Reemplazar CA-0X** con el criterio corregido, o **agregarlo** como nuevo;
+  - **Editar y agregar**, para ajustarlo antes de guardarlo;
+  - **Corregir en la descripción**, que abre el editor con el texto ambiguo seleccionado;
+  - **Descartar** lo que no aplique.
+
+  Lo resuelto queda marcado con ✓ y deja de contar como pendiente. Los criterios sugeridos se agregan uno a uno o con **"Agregar todos"**. También incluye preguntas para el negocio. Antes de subir a Azure DevOps, la aplicación avisa si quedan ambigüedades importantes o historias sin revisar. Sin clave, *"Copiar para claude.ai"* copia las instrucciones y las historias para revisarlas en una conversación de claude.ai.
 - **Criterios de aceptación:** una frase por criterio, numerada CA-01, CA-02…, que dice qué se espera de la funcionalidad. Por ejemplo: *"Como usuario, debo poder acceder al portal con mi usuario y contraseña."* Los criterios escritos en formatos anteriores se convierten solos a una frase.
 - **Validación:** avisa si un criterio está incompleto.
 - **Herramientas:** buscador, duplicar, descarga en Excel (una fila por criterio) y respaldo `.json`.
