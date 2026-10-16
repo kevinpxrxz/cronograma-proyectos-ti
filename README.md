@@ -30,6 +30,14 @@ Es un único archivo (`index.html`). No necesita servidor ni base de datos.
 Aplicación independiente del cronograma para escribir historias de usuario y subirlas al tablero de **Azure DevOps**. Se abre en `https://<tu-usuario>.github.io/<repositorio>/historias.html`.
 
 - **Historias:** código automático (HU-001, HU-002…), título y una **descripción extensa**. El botón *"Insertar guía de descripción"* agrega una estructura con: Como… quiero… para…, contexto, detalle de la funcionalidad, reglas de negocio, fuera de alcance y notas. La aplicación avisa si la descripción es corta.
+- **Mockups e imágenes:** hasta 10 por historia. Se agregan arrastrándolas, con el botón *"Elegir imágenes"* o pegando una captura con Ctrl + V. Las imágenes muy grandes se reducen automáticamente. Se ven en miniatura y se amplían con un clic, se incluyen en el respaldo y se suben a Azure DevOps como adjuntos visibles en la descripción.
+- **Revisión de ambigüedades con IA (Claude Opus 5.5):** con tu clave de API de Anthropic, la IA revisa la descripción, los criterios y los mockups de cada historia y señala:
+  - términos ambiguos y criterios no verificables;
+  - información que falta y contradicciones;
+  - casos no cubiertos y diferencias con los mockups;
+  - historias duplicadas o en conflicto entre sí.
+
+  Cada hallazgo trae severidad, cita, problema y sugerencia de redacción. También propone criterios faltantes (que se agregan con un clic) y preguntas para el negocio. Antes de subir a Azure DevOps, la aplicación avisa si quedan ambigüedades importantes o historias sin revisar. Sin clave, *"Copiar para claude.ai"* copia las instrucciones y las historias para revisarlas en una conversación de claude.ai.
 - **Criterios de aceptación:** una frase por criterio, numerada CA-01, CA-02…, que dice qué se espera de la funcionalidad. Por ejemplo: *"Como usuario, debo poder acceder al portal con mi usuario y contraseña."* Los criterios escritos en formatos anteriores se convierten solos a una frase.
 - **Validación:** avisa si un criterio está incompleto.
 - **Herramientas:** buscador, duplicar, descarga en Excel (una fila por criterio) y respaldo `.json`.
@@ -50,7 +58,15 @@ Aplicación independiente del cronograma para escribir historias de usuario y su
    - el token.
 3. Pulsa **Probar conexión** y luego **Guardar conexión**.
 
-El token solo se envía a Azure DevOps. Por defecto se olvida al cerrar la pestaña. Si marcas *"Recordar el token"*, queda guardado en ese navegador; hazlo solo en una computadora de uso personal.
+### Conectar la IA
+
+1. En **console.anthropic.com → API keys** crea una clave. Conviene fijar un límite de gasto.
+2. En la aplicación pulsa **Conectar IA**, pega la clave, pulsa **Probar clave** y luego **Guardar clave**.
+3. Pulsa **"Revisar ambigüedades con IA"** para revisar las historias pendientes, o **"Revisar con IA"** en una historia.
+
+La clave solo se envía a Anthropic y, como el token de Azure, por defecto se olvida al cerrar la pestaña. Cada revisión tiene un costo según el largo de las historias y sus imágenes.
+
+El token de Azure DevOps solo se envía a Azure DevOps. Por defecto se olvida al cerrar la pestaña. Si marcas *"Recordar el token"*, queda guardado en ese navegador; hazlo solo en una computadora de uso personal.
 
 ## Dónde se guardan los datos
 

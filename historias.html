@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="Diseño de historias de usuario con criterios de aceptación por escenario (situación → resultado esperado), Excel y Azure DevOps.">
+<meta name="description" content="Diseño de historias de usuario con descripción extensa, criterios de aceptación, mockups, revisión de ambigüedades con IA, Excel y Azure DevOps.">
 <title>Historias de Usuario</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,11 +14,11 @@
 html, body { margin: 0; }
 [hidden] { display: none !important; }
 
-/* Layout: cabecera con acciones → buscador → lista de tarjetas de historias */
+/* Layout: cabecera con acciones → herramientas → observaciones de IA entre historias → tarjetas */
 :root {
   --bg: #f2f4f7; --surface: #ffffff; --surface-2: #eceff4; --fg: #131a23; --muted: #5a6675;
   --line: #d9dfe7; --accent: #2453c9; --accent-soft: #dfe7fb; --on-accent: #ffffff;
-  --ok: #1d8a5a; --warn: #a96500; --bad: #c23b33; --k-sit: #6a4fc2;
+  --ok: #1d8a5a; --warn: #a96500; --bad: #c23b33; --ia: #6a4fc2; --ia-soft: #ece7fb;
   --f-display: "Archivo", "Segoe UI", system-ui, sans-serif;
   --f-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
   --f-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
@@ -27,12 +27,12 @@ html, body { margin: 0; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg: #0e131a; --surface: #161d26; --surface-2: #1d2631; --fg: #e6ebf1; --muted: #97a3b2;
   --line: #2a3441; --accent: #7d9cf4; --accent-soft: #233355; --on-accent: #0e131a;
-  --ok: #4cc28a; --warn: #e0a43a; --bad: #f0736a; --k-sit: #a28cf0;
+  --ok: #4cc28a; --warn: #e0a43a; --bad: #f0736a; --ia: #a28cf0; --ia-soft: #2a2447;
   color-scheme: dark; } }
 :root[data-theme="dark"] {
   --bg: #0e131a; --surface: #161d26; --surface-2: #1d2631; --fg: #e6ebf1; --muted: #97a3b2;
   --line: #2a3441; --accent: #7d9cf4; --accent-soft: #233355; --on-accent: #0e131a;
-  --ok: #4cc28a; --warn: #e0a43a; --bad: #f0736a; --k-sit: #a28cf0;
+  --ok: #4cc28a; --warn: #e0a43a; --bad: #f0736a; --ia: #a28cf0; --ia-soft: #2a2447;
   color-scheme: dark; }
 
 * { box-sizing: border-box; }
@@ -54,6 +54,9 @@ h1 { margin: 0; font-family: var(--f-display); font-size: clamp(24px, 3.4vw, 34p
 .btn.primary:hover { filter: brightness(1.08); }
 .btn.danger { color: var(--bad); }
 .btn.danger.armed { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+.btn.ia-btn { border-color: color-mix(in srgb, var(--ia) 45%, var(--line)); color: var(--ia); }
+.btn.ia-btn.solid { background: var(--ia); border-color: var(--ia); color: var(--surface); }
+.btn-sm { padding: 4px 10px; font-size: 12.5px; }
 .xls-ico { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 3px; background: #1d7a46; color: #fff;
   font-size: 11px; font-weight: 700; margin-right: 7px; vertical-align: -3px; }
 .theme-switch { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 500; user-select: none; position: relative; }
@@ -64,11 +67,12 @@ h1 { margin: 0; font-family: var(--f-display); font-size: clamp(24px, 3.4vw, 34p
 .theme-switch input:checked + .sw-track .sw-thumb { transform: translateX(18px); }
 .theme-switch input:focus-visible + .sw-track { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-.tools { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
-.search { display: flex; align-items: center; gap: 8px; flex: 1 1 320px; max-width: 560px; border: 1px solid var(--line); border-radius: 6px;
+.tools { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+.search { display: flex; align-items: center; gap: 8px; flex: 1 1 320px; max-width: 520px; border: 1px solid var(--line); border-radius: 6px;
   background: var(--surface); padding: 0 10px; color: var(--muted); }
 .search:focus-within { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
 .search input { flex: 1; min-width: 0; border: 0; background: transparent; padding: 9px 0; outline: none; }
+.tools-right { display: flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
 .hint { color: var(--muted); font-size: 12.5px; }
 .note { color: var(--muted); font-size: 12.5px; margin: 0; }
 
@@ -81,72 +85,116 @@ h1 { margin: 0; font-family: var(--f-display); font-size: clamp(24px, 3.4vw, 34p
 .card-actions .btn { padding: 5px 10px; font-size: 13px; }
 .desc { margin: 0; white-space: pre-line; max-width: 80ch; }
 .desc.vacia { color: var(--muted); font-style: italic; }
+.desc.larga { display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
+.desc.larga.abierta { display: block; -webkit-line-clamp: unset; }
+.more { border: 0; background: none; color: var(--accent); cursor: pointer; padding: 0; font-size: 13px; justify-self: start; }
+.more:hover { text-decoration: underline; }
+.sec-sum { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
 .crit { display: grid; gap: 6px; }
-.crit-sum { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
-/* criterio: CA-01 + nombre del escenario, y debajo situación → resultado esperado */
 /* criterio: CA-01 + una frase con lo que se espera de la funcionalidad */
 .ca-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
 .ca { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 10px; padding: 8px 12px; border-radius: 6px; background: var(--surface-2); }
 .ca-code { font-family: var(--f-mono); font-size: 12px; font-weight: 500; color: var(--accent); padding-top: 1px; }
 .ca p { margin: 0; white-space: pre-line; }
-/* descripción larga: se recorta en la tarjeta y se despliega */
-.desc.larga { display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
-.desc.larga.abierta { display: block; -webkit-line-clamp: unset; }
-.more { border: 0; background: none; color: var(--accent); cursor: pointer; padding: 0; font-size: 13px; justify-self: start; }
-.more:hover { text-decoration: underline; }
-.desc-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
-.btn-sm { padding: 4px 10px; font-size: 12.5px; }
-.desc-input { min-height: 220px; line-height: 1.5; }
-.desc-count { font-size: 12px; color: var(--muted); }
-.desc-count.corta { color: var(--warn); font-weight: 600; }
 .empty { background: var(--surface); border: 1px dashed var(--line); border-radius: var(--radius); padding: 36px 20px; text-align: center; color: var(--muted); display: grid; gap: 10px; justify-items: center; }
 mark { background: color-mix(in srgb, var(--warn) 30%, transparent); color: inherit; border-radius: 2px; }
 
+/* mockups */
+.mock { display: grid; gap: 6px; }
+.thumbs { display: flex; flex-wrap: wrap; gap: 8px; }
+.thumb { position: relative; width: 132px; display: grid; gap: 3px; }
+.thumb-img { width: 132px; height: 92px; border-radius: 6px; overflow: hidden; border: 1px solid var(--line); background: var(--surface-2); padding: 0; cursor: zoom-in; display: block; }
+.thumb-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb-name { font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.thumb-x { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border-radius: 50%; border: 0; background: rgb(10 14 20 / .7); color: #fff;
+  cursor: pointer; font-size: 13px; line-height: 1; display: grid; place-items: center; }
+.drop { border: 1.5px dashed var(--line); border-radius: 8px; padding: 14px; text-align: center; color: var(--muted); display: grid; gap: 8px; justify-items: center; font-size: 13px; }
+.drop.over { border-color: var(--accent); background: var(--accent-soft); color: var(--fg); }
+
+/* revisión IA */
+.ia-row { display: grid; gap: 8px; padding: 10px 12px; border-radius: 6px; background: var(--ia-soft); }
+.ia-head { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; }
+.ia-chip { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 12.5px; color: var(--ia); }
+.ia-chip .k { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; background: var(--ia); color: var(--surface); padding: 1px 6px; border-radius: 3px; }
+.ia-head .btn { padding: 4px 10px; font-size: 12.5px; }
+.ia-head .right { display: flex; gap: 6px; margin-left: auto; }
+.ia-old { color: var(--warn); font-weight: 600; font-size: 12.5px; }
+.ia-body { display: grid; gap: 10px; }
+.ia-res { margin: 0; font-size: 13px; }
+.hall-list { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.hall { display: grid; gap: 4px; padding: 9px 12px; border-radius: 6px; background: var(--surface); border-left: 3px solid var(--muted); }
+.hall.alta { border-left-color: var(--bad); } .hall.media { border-left-color: var(--warn); }
+.hall.descartado { opacity: .55; }
+.hall-top { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; font-size: 12.5px; }
+.sev { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.sev.alta { color: var(--bad); } .sev.media { color: var(--warn); } .sev.baja { color: var(--muted); }
+.hall-top .tipo { font-weight: 600; }
+.hall-top .ubic { font-family: var(--f-mono); color: var(--muted); }
+.hall-top button { margin-left: auto; border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 12px; text-decoration: underline; }
+.hall q { color: var(--muted); font-style: italic; }
+.hall p { margin: 0; }
+.hall .sug { color: var(--ok); }
+.sug-list, .preg-list { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.sug-list li { display: flex; gap: 10px; align-items: flex-start; padding: 7px 10px; border-radius: 6px; background: var(--surface); }
+.sug-list li p { margin: 0; flex: 1; }
+.sug-list li .btn { padding: 3px 9px; font-size: 12px; flex: none; }
+.preg-list li { padding-left: 16px; position: relative; }
+.preg-list li::before { content: "?"; position: absolute; left: 2px; color: var(--ia); font-weight: 700; }
+.ia-global { background: var(--surface); border: 1px solid color-mix(in srgb, var(--ia) 40%, var(--line)); border-radius: var(--radius); padding: 12px 16px; display: grid; gap: 8px; }
+.ia-global h2 { margin: 0; font-size: 15px; font-family: var(--f-display); color: var(--ia); }
+
+/* editor */
 dialog { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--fg); padding: 0; width: min(860px, calc(100vw - 32px)); }
 dialog::backdrop { background: rgb(10 14 20 / .45); }
 .ed { display: grid; gap: 14px; padding: 20px; }
 .ed-top { display: flex; gap: 12px; align-items: center; }
 .ed-top h3 { margin: 0; font-family: var(--f-display); font-size: 19px; }
 .field { display: grid; gap: 5px; min-width: 0; }
-.field label { font-size: 12px; font-weight: 600; color: var(--muted); }
-.field input, .field textarea, .crit-row textarea, .crit-row input { width: 100%; min-width: 0; border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; background: var(--surface); resize: vertical; }
-.field input:focus, .field textarea:focus, .crit-row textarea:focus, .crit-row input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 2px var(--accent-soft); }
+.field label, .lbl { font-size: 12px; font-weight: 600; color: var(--muted); }
+.field input, .field textarea, .crit-row textarea { width: 100%; min-width: 0; border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; background: var(--surface); resize: vertical; }
+.field input:focus, .field textarea:focus, .crit-row textarea:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 2px var(--accent-soft); }
+.desc-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.desc-input { min-height: 220px; line-height: 1.5; }
+.desc-count { font-size: 12px; color: var(--muted); }
+.desc-count.corta { color: var(--warn); font-weight: 600; }
 .crit-head { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
 .crit-head h4 { margin: 0; font-size: 14px; }
 .crit-list { display: grid; gap: 10px; }
-.crit-ed { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); }
-.crit-ed-top { display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 600; color: var(--muted); }
-.crit-ed-top button { border: 0; background: none; color: var(--bad); cursor: pointer; font-size: 12.5px; padding: 2px 4px; }
 .crit-row { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 8px; align-items: start; }
 .crit-row label { font-family: var(--f-mono); font-size: 12px; font-weight: 500; color: var(--accent); padding-top: 9px; }
-.crit-row textarea { min-height: 42px; padding: 8px 10px; }
+.crit-row textarea { min-height: 42px; }
 .crit-row button { border: 0; background: none; color: var(--bad); cursor: pointer; font-size: 12.5px; padding: 9px 4px 0; }
 .err { color: var(--bad); margin: 0; font-size: 13px; }
 .ed-foot { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
-.ed-foot .right { display: flex; gap: 8px; margin-left: auto; }
+.ed-foot .right { display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; }
+.visor { width: min(1180px, calc(100vw - 32px)); }
+.visor-body { display: grid; gap: 10px; padding: 14px; }
+.visor-body img { max-width: 100%; max-height: 78vh; object-fit: contain; justify-self: center; border-radius: 6px; background: var(--surface-2); }
+.visor-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.cf-text { margin: 0; white-space: pre-line; }
 .toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--fg); color: var(--bg);
   padding: 10px 16px; border-radius: 6px; z-index: 50; max-width: calc(100vw - 32px); font-size: 13.5px; }
-/* Azure DevOps */
+
+/* conexiones (Azure DevOps e IA) */
 .az-btn { display: inline-flex; align-items: center; gap: 8px; }
 .az-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--line); flex: none; }
 .az-dot.on { background: var(--ok); }
-.az-sync { margin-left: auto; }
 .grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
 .grid2 .full { grid-column: 1 / -1; }
 .field select { width: 100%; border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; background: var(--surface); }
 .field select:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 2px var(--accent-soft); }
 .check { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; }
 .check input { accent-color: var(--accent); width: 16px; height: 16px; margin-top: 1px; flex: none; }
-.az-status { margin: 0; padding: 9px 12px; border-radius: 6px; font-size: 13px; background: var(--surface-2); }
-.az-status.ok { color: var(--ok); background: color-mix(in srgb, var(--ok) 10%, var(--surface)); }
-.az-status.bad { color: var(--bad); background: color-mix(in srgb, var(--bad) 9%, var(--surface)); }
+.status { margin: 0; padding: 9px 12px; border-radius: 6px; font-size: 13px; background: var(--surface-2); }
+.status.ok { color: var(--ok); background: color-mix(in srgb, var(--ok) 10%, var(--surface)); }
+.status.bad { color: var(--bad); background: color-mix(in srgb, var(--bad) 9%, var(--surface)); }
 .az-row { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; padding-top: 8px; border-top: 1px solid var(--line); font-size: 13px; }
 .az-chip { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 12.5px; }
 .az-chip::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
 .az-chip.nueva { color: var(--muted); } .az-chip.al-dia { color: var(--ok); } .az-chip.cambios { color: var(--warn); }
 .az-row a { color: var(--accent); }
 .az-row .btn { padding: 5px 10px; font-size: 13px; margin-left: auto; }
-@media (max-width: 560px) { .grid2 { grid-template-columns: minmax(0, 1fr); } .az-sync { margin-left: 0; } }
+@media (max-width: 560px) { .grid2 { grid-template-columns: minmax(0, 1fr); } .tools-right { margin-left: 0; } }
 @media (max-width: 640px) { .wrap { padding-inline: 16px; } }
 @media (max-width: 520px) { .crit-row { grid-template-columns: minmax(0, 1fr) auto; } .crit-row label { grid-column: 1 / -1; padding-top: 0; } }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
@@ -166,8 +214,9 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
         <span class="sw-track" aria-hidden="true"><span class="sw-thumb"></span></span>
         <span>Modo oscuro</span>
       </label>
+      <button class="btn az-btn" id="ia-open" type="button"><span class="az-dot" id="ia-dot" aria-hidden="true"></span><span id="ia-label">Conectar IA</span></button>
       <button class="btn az-btn" id="az-open" type="button"><span class="az-dot" id="az-dot" aria-hidden="true"></span><span id="az-label">Conectar Azure DevOps</span></button>
-      <button class="btn" id="bk-export" type="button" title="Descarga un archivo con todas tus historias">Exportar respaldo</button>
+      <button class="btn" id="bk-export" type="button" title="Descarga un archivo con todas tus historias y sus mockups">Exportar respaldo</button>
       <button class="btn" id="bk-import" type="button" title="Carga historias desde un archivo de respaldo">Importar respaldo</button>
       <input type="file" id="bk-file" accept=".json,application/json" hidden>
       <button class="btn" id="xls" type="button"><span class="xls-ico" aria-hidden="true">X</span>Descargar Excel</button>
@@ -179,24 +228,38 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
     <label class="search" for="q"><span aria-hidden="true">⌕</span>
       <input id="q" type="search" placeholder="Buscar por código, título, descripción o criterio…" autocomplete="off"></label>
     <span class="hint" id="count"></span>
-    <button class="btn az-sync" id="az-sync-all" type="button" hidden></button>
+    <div class="tools-right">
+      <button class="btn ia-btn" id="ia-review-all" type="button"></button>
+      <button class="btn primary" id="az-sync-all" type="button" hidden></button>
+    </div>
   </div>
+
+  <section class="ia-global" id="ia-global" hidden></section>
 
   <div class="list" id="list"><div class="empty">Cargando historias…</div></div>
 
-  <p class="note">Las historias se guardan en este navegador. Usa <b>Exportar respaldo</b> para pasarlas a otra computadora o compartirlas.</p>
+  <p class="note">Las historias y sus mockups se guardan en este navegador. Usa <b>Exportar respaldo</b> para pasarlas a otra computadora o compartirlas.</p>
 </div>
 
 <dialog id="editor" aria-labelledby="ed-title">
   <form class="ed" id="form" novalidate>
     <div class="ed-top"><h3 id="ed-title">Nueva historia</h3><span class="code" id="ed-code"></span></div>
     <div class="field"><label for="titulo">Título de la historia</label>
-      <input id="titulo" type="text" maxlength="160" placeholder="Ej.: Recuperar contraseña por correo"></div>
+      <input id="titulo" type="text" maxlength="160" placeholder="Ej.: Inicio de sesión en el portal"></div>
     <div class="field">
       <div class="desc-head"><label for="desc">Descripción</label>
         <button class="btn btn-sm" type="button" id="guia">Insertar guía de descripción</button></div>
       <textarea id="desc" class="desc-input" rows="12" maxlength="20000" placeholder="Describe la historia con detalle: quién la necesita, qué debe hacer la funcionalidad, por qué, reglas de negocio y qué queda fuera. Pulsa «Insertar guía de descripción» para usar una estructura."></textarea>
       <span class="desc-count" id="desc-count"></span>
+    </div>
+    <div class="field">
+      <span class="lbl" id="img-lbl">Mockups e imágenes</span>
+      <div class="drop" id="drop" aria-labelledby="img-lbl">
+        <span>Arrastra imágenes aquí, pega una captura con <b>Ctrl + V</b> o</span>
+        <button class="btn btn-sm" type="button" id="img-pick">Elegir imágenes</button>
+        <input type="file" id="img-file" accept="image/png,image/jpeg,image/gif,image/webp" multiple hidden>
+      </div>
+      <div class="thumbs" id="ed-imgs"></div>
     </div>
     <div class="crit-head">
       <h4>Criterios de aceptación</h4>
@@ -209,15 +272,57 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
       <button class="btn danger" type="button" id="del">Eliminar</button>
       <div class="right">
         <button class="btn" type="button" id="cancel">Cancelar</button>
-        <button class="btn primary" type="submit">Guardar historia</button>
+        <button class="btn primary" type="submit" id="save">Guardar historia</button>
       </div>
     </div>
   </form>
 </dialog>
+
+<dialog id="visor" class="visor" aria-labelledby="visor-name">
+  <div class="visor-body">
+    <div class="visor-top"><strong id="visor-name"></strong><button class="btn btn-sm" type="button" id="visor-close">Cerrar</button></div>
+    <img id="visor-img" alt="">
+  </div>
+</dialog>
+
+<dialog id="confirm" aria-labelledby="cf-title">
+  <div class="ed">
+    <div class="ed-top"><h3 id="cf-title"></h3></div>
+    <p class="cf-text" id="cf-text"></p>
+    <div class="ed-foot"><div class="right">
+      <button class="btn" type="button" id="cf-no">Cancelar</button>
+      <button class="btn ia-btn" type="button" id="cf-alt" hidden></button>
+      <button class="btn primary" type="button" id="cf-yes"></button>
+    </div></div>
+  </div>
+</dialog>
+
+<dialog id="ia-dialog" aria-labelledby="ia-title">
+  <form class="ed" id="ia-form" novalidate>
+    <div class="ed-top"><h3 id="ia-title">Revisión con IA (Claude)</h3></div>
+    <p class="note">La IA lee cada historia (descripción, criterios y mockups) y te indica las ambigüedades: términos vagos, criterios que no se pueden probar, información que falta, contradicciones, casos no cubiertos y diferencias con los mockups. También compara las historias entre sí, propone criterios faltantes y preguntas para el negocio.</p>
+    <div class="field"><label for="ia-key">Clave de API de Anthropic</label>
+      <input id="ia-key" type="password" autocomplete="off" spellcheck="false" placeholder="sk-ant-…">
+      <span class="hint">Créala en <b>console.anthropic.com</b> → <b>API keys</b>. Se usa el modelo <b>Claude Opus 5.5</b>; cada revisión tiene un costo según el largo de las historias (normalmente unos centavos de dólar). Te recomendamos fijar un límite de gasto en la consola. La clave solo se envía a Anthropic.</span></div>
+    <label class="check"><input type="checkbox" id="ia-remember"> Recordar la clave en este navegador. Si no lo marcas, se olvida al cerrar la pestaña.</label>
+    <p class="status" id="ia-status" hidden></p>
+    <p class="note">¿No tienes clave? Pulsa <b>Copiar para claude.ai</b>: se copian las instrucciones y tus historias pendientes para pegarlas en una conversación de claude.ai. Las imágenes adjúntalas tú en esa conversación.</p>
+    <div class="ed-foot">
+      <button class="btn danger" type="button" id="ia-forget">Olvidar clave</button>
+      <div class="right">
+        <button class="btn" type="button" id="ia-copy">Copiar para claude.ai</button>
+        <button class="btn" type="button" id="ia-cancel">Cerrar</button>
+        <button class="btn" type="button" id="ia-test">Probar clave</button>
+        <button class="btn primary" type="submit">Guardar clave</button>
+      </div>
+    </div>
+  </form>
+</dialog>
+
 <dialog id="az-dialog" aria-labelledby="az-title">
   <form class="ed" id="az-form" novalidate>
     <div class="ed-top"><h3 id="az-title">Conexión con Azure DevOps</h3></div>
-    <p class="note">Cada historia se crea como un elemento de trabajo en el tablero de tu proyecto. Si cambias una historia y la vuelves a subir, se actualiza el <b>mismo</b> elemento y sus criterios de aceptación se reemplazan por completo, así no quedan criterios antiguos.</p>
+    <p class="note">Cada historia se crea como un elemento de trabajo en el tablero de tu proyecto, con sus mockups como adjuntos. Si cambias una historia y la vuelves a subir, se actualiza el <b>mismo</b> elemento y sus criterios de aceptación se reemplazan por completo, así no quedan criterios antiguos.</p>
     <div class="grid2">
       <div class="field"><label for="az-org">Organización</label><input id="az-org" type="text" autocomplete="off" placeholder="miempresa o https://dev.azure.com/miempresa"></div>
       <div class="field"><label for="az-proj">Proyecto</label><input id="az-proj" type="text" autocomplete="off" placeholder="Nombre del proyecto en Azure DevOps"></div>
@@ -234,7 +339,7 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
         <span class="hint">Créalo en Azure DevOps → <b>User settings</b> → <b>Personal access tokens</b>, con el permiso <b>Work Items: Read &amp; write</b>. Solo se envía a Azure DevOps.</span></div>
       <label class="check full"><input type="checkbox" id="az-remember"> Recordar el token en este navegador. Si no lo marcas, se olvida al cerrar la pestaña.</label>
     </div>
-    <p class="az-status" id="az-status" hidden></p>
+    <p class="status" id="az-status" hidden></p>
     <div class="ed-foot">
       <button class="btn danger" type="button" id="az-forget">Olvidar token</button>
       <div class="right">
@@ -255,15 +360,78 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const hoy = () => { const n = new Date(); return n.getFullYear() + '-' + String(n.getMonth() + 1).padStart(2, '0') + '-' + String(n.getDate()).padStart(2, '0'); };
   const fechaLarga = () => { const n = new Date(); return n.getDate() + ' ' + MESES[n.getMonth()] + ' ' + n.getFullYear(); };
+  const fechaHora = iso => { const f = new Date(iso); return isNaN(f) ? '' : `${f.getDate()} ${MESES[f.getMonth()]} ${String(f.getHours()).padStart(2, '0')}:${String(f.getMinutes()).padStart(2, '0')}`; };
   const codigo = h => 'HU-' + String(h.numero || 0).padStart(3, '0');
   const genId = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-6);
+  const plural = (n, uno, varios) => n === 1 ? '1 ' + uno : n + ' ' + varios;
+
+  // ---------- imágenes (IndexedDB de este navegador) ----------
+  const IDB = (() => {
+    let abierta;
+    const abrir = () => abierta || (abierta = new Promise((ok, bad) => {
+      const r = indexedDB.open('historias-imagenes', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('img');
+      r.onsuccess = () => ok(r.result);
+      r.onerror = () => bad(r.error);
+    }));
+    const tx = async (modo, fn) => {
+      const db = await abrir();
+      return new Promise((ok, bad) => {
+        const t = db.transaction('img', modo);
+        const req = fn(t.objectStore('img'));
+        t.oncomplete = () => ok(req ? req.result : undefined);
+        t.onerror = () => bad(t.error);
+        t.onabort = () => bad(t.error);
+      });
+    };
+    return {
+      get: id => tx('readonly', s => s.get(id)),
+      put: (id, blob) => tx('readwrite', s => s.put(blob, id)),
+      del: id => tx('readwrite', s => s.delete(id))
+    };
+  })();
+  const urls = new Map(); // id de imagen → URL temporal para mostrarla
+  async function urlImg(id) {
+    if (urls.has(id)) return urls.get(id);
+    const b = await IDB.get(id);
+    if (!b) return '';
+    const u = URL.createObjectURL(b);
+    urls.set(id, u);
+    return u;
+  }
+  function olvidarUrl(id) { const u = urls.get(id); if (u) { URL.revokeObjectURL(u); urls.delete(id); } }
+  // completa el src de las miniaturas después de pintar el HTML
+  function hidratar(root) {
+    root.querySelectorAll('img[data-img]').forEach(async img => {
+      try { const u = await urlImg(img.dataset.img); if (u) img.src = u; } catch (e) {}
+    });
+  }
+  // reduce las imágenes muy grandes para que no llenen el navegador ni encarezcan la revisión
+  async function prepararImagen(file) {
+    const u = URL.createObjectURL(file);
+    try {
+      const img = await new Promise((ok, bad) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => bad(new Error('img')); i.src = u; });
+      let w = img.naturalWidth, h = img.naturalHeight;
+      const MAX = 1600;
+      const valida = /^image\/(png|jpeg|gif|webp)$/.test(file.type);
+      if (valida && Math.max(w, h) <= MAX && file.size <= 1.5e6) return { blob: file, tipo: file.type, ancho: w, alto: h };
+      const k = Math.min(1, MAX / Math.max(w, h));
+      w = Math.round(w * k); h = Math.round(h * k);
+      const c = document.createElement('canvas'); c.width = w; c.height = h;
+      const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h); ctx.drawImage(img, 0, 0, w, h);
+      const blob = await new Promise(ok => c.toBlob(ok, 'image/jpeg', 0.88));
+      return { blob, tipo: 'image/jpeg', ancho: w, alto: h };
+    } finally { URL.revokeObjectURL(u); }
+  }
+  const blobADataUrl = b => new Promise((ok, bad) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = () => bad(r.error); r.readAsDataURL(b); });
+  const dataUrlABlob = async d => (await fetch(d)).blob();
+  const MAX_IMGS = 10;
 
   // ---------- datos (localStorage de este navegador) ----------
   let historias = [];
   let ultimoNumero = 0; // nunca se reutiliza un código, aunque se borre la historia
-  // Formato de criterio: { texto } — una frase con lo que se espera de la funcionalidad.
-  // Los formatos anteriores (Dado/Cuando/Entonces o escenario/situación/resultado)
-  // se convierten a una sola frase sin perder texto.
+  // Criterio: { texto } — una frase con lo que se espera de la funcionalidad.
+  // Los formatos anteriores (Dado/Cuando/Entonces o escenario/situación/resultado) se convierten sin perder texto.
   const unir = partes => partes.map(p => String(p || '').trim()).filter(Boolean).join(' ');
   const normCrit = c => {
     c = c || {};
@@ -274,6 +442,7 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
     }
     return { texto: unir([c.dado && 'Dado ' + c.dado + ',', c.cuando && 'cuando ' + c.cuando + ',', c.entonces && 'entonces ' + c.entonces]) };
   };
+  const normImg = m => m && typeof m.id === 'string' ? { id: m.id, nombre: String(m.nombre || 'imagen'), tipo: String(m.tipo || 'image/png'), ancho: Number(m.ancho) || 0, alto: Number(m.alto) || 0 } : null;
   const caCodigo = i => 'CA-' + String(i + 1).padStart(2, '0');
   const GUIA = `Como [tipo de usuario], quiero [lo que necesita hacer] para [el beneficio que obtiene].
 
@@ -296,7 +465,9 @@ Notas o dependencias:
   function cargar() {
     try {
       const d = JSON.parse(localStorage.getItem(KEY) || '{}');
-      historias = (Array.isArray(d.historias) ? d.historias : []).map(h => ({ ...h, criterios: (h.criterios || []).map(normCrit) }));
+      historias = (Array.isArray(d.historias) ? d.historias : []).map(h => ({
+        ...h, criterios: (h.criterios || []).map(normCrit), imagenes: (h.imagenes || []).map(normImg).filter(Boolean)
+      }));
       ultimoNumero = Math.max(d.ultimoNumero || 0, ...historias.map(h => h.numero || 0), 0);
     } catch (e) { historias = []; }
   }
@@ -305,6 +476,12 @@ Notas o dependencias:
     catch (e) { toast('No se pudo guardar: el navegador no tiene espacio o bloquea el almacenamiento.'); return false; }
   }
   window.addEventListener('storage', ev => { if (ev.key === KEY) { cargar(); render(); } });
+  // huella del contenido: sirve para saber si cambió desde que se subió o se revisó
+  const firma = h => {
+    const base = [h.titulo, h.descripcion, h.criterios];
+    if ((h.imagenes || []).length) base.push(h.imagenes.map(m => m.id));
+    return JSON.stringify(base);
+  };
 
   // ---------- lista ----------
   const q = () => ($('#q').value || '').trim().toLowerCase();
@@ -315,26 +492,39 @@ Notas o dependencias:
     if (i < 0) return esc(txt);
     return esc(txt.slice(0, i)) + '<mark>' + esc(txt.slice(i, i + s.length)) + '</mark>' + esc(txt.slice(i + s.length));
   };
+  const abiertas = new Set();   // descripciones desplegadas
+  const iaAbiertas = new Set(); // paneles de revisión desplegados
   function render() {
     const todas = historias.slice().sort((a, b) => (a.numero || 0) - (b.numero || 0));
     const nCrit = todas.reduce((a, h) => a + (h.criterios || []).length, 0);
-    $('#sub').textContent = `${todas.length === 1 ? '1 historia' : todas.length + ' historias'} · ${nCrit === 1 ? '1 criterio de aceptación' : nCrit + ' criterios de aceptación'}`;
+    $('#sub').textContent = `${plural(todas.length, 'historia', 'historias')} · ${plural(nCrit, 'criterio de aceptación', 'criterios de aceptación')}`;
     $('#xls').disabled = !todas.length;
     const s = q();
     const lista = s ? todas.filter(h => [codigo(h), h.titulo, h.descripcion, ...(h.criterios || []).flatMap((c, i) => [caCodigo(i), c.texto])]
       .some(x => String(x || '').toLowerCase().includes(s))) : todas;
     $('#count').textContent = s ? `${lista.length} de ${todas.length} coinciden con «${$('#q').value.trim()}»` : '';
+    renderAzBarra();
+    renderIaBarra();
+    renderIaGlobal();
     const el = $('#list');
     if (!todas.length) {
       el.innerHTML = `<div class="empty"><strong>Aún no hay historias de usuario.</strong>
-        <span>Cada historia tiene un título, una descripción y sus criterios de aceptación: cada criterio es un escenario con su situación y su resultado esperado.</span>
+        <span>Cada historia tiene un título, una descripción extensa, sus mockups y sus criterios de aceptación.</span>
         <button class="btn primary" type="button" data-new>+ Escribir la primera historia</button></div>`;
       return;
     }
     if (!lista.length) { el.innerHTML = '<div class="empty">Ninguna historia coincide con la búsqueda.</div>'; return; }
     el.innerHTML = lista.map(h => {
       const cs = h.criterios || [];
-      return `<article class="card">
+      const imgs = h.imagenes || [];
+      let descHtml = '<p class="desc vacia">Sin descripción.</p>';
+      if (h.descripcion) {
+        const larga = h.descripcion.split('\n').length > 6 || h.descripcion.length > 600;
+        const abierta = larga && (abiertas.has(h.id) || (s && h.descripcion.toLowerCase().includes(s)));
+        descHtml = `<p class="desc${larga ? ' larga' : ''}${abierta ? ' abierta' : ''}">${resaltar(h.descripcion, s)}</p>
+          ${larga ? `<button class="more" type="button" data-more="${esc(h.id)}">${abierta ? 'Ver menos' : 'Ver descripción completa'}</button>` : ''}`;
+      }
+      return `<article class="card" id="hu-${esc(h.id)}">
         <div class="card-top">
           <span class="code">${resaltar(codigo(h), s)}</span>
           <h2 class="title">${resaltar(h.titulo || 'Sin título', s)}</h2>
@@ -343,36 +533,27 @@ Notas o dependencias:
             <button class="btn" type="button" data-dup="${esc(h.id)}" title="Crear una copia para usarla de base">Duplicar</button>
           </div>
         </div>
-        ${h.descripcion
-          ? (() => {
-              const larga = h.descripcion.split('\n').length > 6 || h.descripcion.length > 600;
-              const abierta = larga && (abiertas.has(h.id) || (s && h.descripcion.toLowerCase().includes(s)));
-              return `<p class="desc${larga ? ' larga' : ''}${abierta ? ' abierta' : ''}">${resaltar(h.descripcion, s)}</p>
-                ${larga ? `<button class="more" type="button" data-more="${esc(h.id)}">${abierta ? 'Ver menos' : 'Ver descripción completa'}</button>` : ''}`;
-            })()
-          : '<p class="desc vacia">Sin descripción.</p>'}
+        ${descHtml}
+        ${imgs.length ? `<div class="mock"><span class="sec-sum">${plural(imgs.length, 'mockup', 'mockups')}</span>
+          <div class="thumbs">${imgs.map((m, i) => `<div class="thumb">
+            <button class="thumb-img" type="button" data-ver="${esc(h.id)}|${esc(m.id)}" aria-label="Ver ${esc(m.nombre)}"><img data-img="${esc(m.id)}" alt="Mockup ${i + 1}: ${esc(m.nombre)}"></button>
+            <span class="thumb-name">${i + 1}. ${esc(m.nombre)}</span></div>`).join('')}</div></div>` : ''}
         <div class="crit">
-          <span class="crit-sum">${cs.length ? (cs.length === 1 ? '1 criterio de aceptación' : cs.length + ' criterios de aceptación') : 'Sin criterios de aceptación todavía'}</span>
+          <span class="sec-sum">${cs.length ? plural(cs.length, 'criterio de aceptación', 'criterios de aceptación') : 'Sin criterios de aceptación todavía'}</span>
           ${cs.length ? `<ol class="ca-list">${cs.map((c, i) => `<li class="ca"><span class="ca-code">${resaltar(caCodigo(i), s)}</span><p>${resaltar(c.texto, s)}</p></li>`).join('')}</ol>` : ''}
         </div>
+        ${iaFila(h)}
         ${azFila(h)}
       </article>`;
     }).join('');
-    renderAzBarra();
+    hidratar(el);
   }
   $('#q').addEventListener('input', render);
-  const abiertas = new Set();
-  $('#list').addEventListener('click', ev => {
-    const b = ev.target.closest('[data-more]');
-    if (!b) return;
-    const id = b.dataset.more;
-    abiertas.has(id) ? abiertas.delete(id) : abiertas.add(id);
-    render();
-  });
 
   // ---------- editor ----------
   const dlg = $('#editor');
   let editId = null;
+  let edImgs = []; // imágenes de la historia mientras se edita
   const EJEMPLOS = [
     'Como usuario, debo poder acceder al portal con mi usuario y contraseña.',
     'Como usuario, debo ver un mensaje claro si mi usuario o contraseña son incorrectos.',
@@ -383,15 +564,12 @@ Notas o dependencias:
       <textarea id="ca-${i}" rows="2" data-k="texto" placeholder="Ej.: ${esc(EJEMPLOS[i % EJEMPLOS.length])}">${esc(c.texto || '')}</textarea>
       <button type="button" data-crit-del aria-label="Quitar ${caCodigo(i)}">Quitar</button>
     </div>`;
-  const leerCriterios = () => [...document.querySelectorAll('#crit-list [data-crit]')].map(r => ({
-    texto: r.querySelector('[data-k="texto"]').value.trim()
-  }));
+  const leerCriterios = () => [...document.querySelectorAll('#crit-list [data-crit]')].map(r => ({ texto: r.querySelector('[data-k="texto"]').value.trim() }));
+  const pintar = cs => { $('#crit-list').innerHTML = cs.map(critRow).join(''); };
   function contarDesc() {
     const n = $('#desc').value.trim().length;
     const el = $('#desc-count');
-    el.textContent = n
-      ? `${n} caracteres${n < DESC_MIN ? ` · una descripción completa suele tener más de ${DESC_MIN}: agrega contexto, detalle y reglas de negocio` : ''}`
-      : '';
+    el.textContent = n ? `${n} caracteres${n < DESC_MIN ? ` · una descripción completa suele tener más de ${DESC_MIN}: agrega contexto, detalle y reglas de negocio` : ''}` : '';
     el.className = 'desc-count' + (n && n < DESC_MIN ? ' corta' : '');
   }
   $('#desc').addEventListener('input', contarDesc);
@@ -403,7 +581,49 @@ Notas o dependencias:
     const i = t.value.indexOf('[tipo de usuario]');
     if (i >= 0) t.setSelectionRange(i, i + '[tipo de usuario]'.length);
   });
-  const pintar = cs => { $('#crit-list').innerHTML = cs.map(critRow).join(''); };
+  function pintarImgs() {
+    $('#ed-imgs').innerHTML = edImgs.map((m, i) => `<div class="thumb">
+      <span class="thumb-img"><img ${m._url ? `src="${m._url}"` : `data-img="${esc(m.clonarDe || m.id)}"`} alt="Mockup ${i + 1}: ${esc(m.nombre)}"></span>
+      <span class="thumb-name">${i + 1}. ${esc(m.nombre)}</span>
+      <button class="thumb-x" type="button" data-img-del="${i}" aria-label="Quitar ${esc(m.nombre)}">×</button></div>`).join('');
+    hidratar($('#ed-imgs'));
+    $('#drop').hidden = edImgs.length >= MAX_IMGS;
+  }
+  async function agregarImagenes(files) {
+    const lista = [...files].filter(f => f && f.type && f.type.startsWith('image/'));
+    if (!lista.length) return;
+    let saltadas = 0;
+    for (const f of lista) {
+      if (edImgs.length >= MAX_IMGS) { saltadas++; continue; }
+      try {
+        const p = await prepararImagen(f);
+        let nombre = (f.name && f.name !== 'image.png') ? f.name : `captura-${edImgs.length + 1}.png`;
+        if (p.tipo === 'image/jpeg' && !/\.jpe?g$/i.test(nombre)) nombre = nombre.replace(/\.[^.]+$/, '') + '.jpg';
+        edImgs.push({ id: genId(), nombre, tipo: p.tipo, ancho: p.ancho, alto: p.alto, blob: p.blob, _url: URL.createObjectURL(p.blob) });
+      } catch (e) { saltadas++; }
+    }
+    pintarImgs();
+    if (saltadas) toast(edImgs.length >= MAX_IMGS ? `Máximo ${MAX_IMGS} imágenes por historia.` : 'Alguna imagen no se pudo leer.');
+  }
+  $('#img-pick').addEventListener('click', () => $('#img-file').click());
+  $('#img-file').addEventListener('change', ev => { agregarImagenes(ev.target.files); ev.target.value = ''; });
+  const drop = $('#drop');
+  ['dragenter', 'dragover'].forEach(t => drop.addEventListener(t, ev => { ev.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach(t => drop.addEventListener(t, ev => { ev.preventDefault(); drop.classList.remove('over'); }));
+  drop.addEventListener('drop', ev => agregarImagenes(ev.dataTransfer.files));
+  dlg.addEventListener('paste', ev => {
+    const files = [...(ev.clipboardData ? ev.clipboardData.files : [])].filter(f => f.type.startsWith('image/'));
+    if (!files.length) return; // texto: se pega normal
+    ev.preventDefault();
+    agregarImagenes(files);
+  });
+  $('#ed-imgs').addEventListener('click', ev => {
+    const b = ev.target.closest('[data-img-del]');
+    if (!b) return;
+    const [m] = edImgs.splice(Number(b.dataset.imgDel), 1);
+    if (m && m._url) URL.revokeObjectURL(m._url);
+    pintarImgs();
+  });
   function abrir(id, base) {
     const h = id ? historias.find(x => x.id === id) : null;
     editId = h ? h.id : null;
@@ -414,12 +634,16 @@ Notas o dependencias:
     $('#desc').value = src.descripcion || '';
     contarDesc();
     pintar(src.criterios && src.criterios.length ? src.criterios : [{}]);
+    // al duplicar, las imágenes se copian con un id nuevo al guardar
+    edImgs = (src.imagenes || []).map(m => h ? { ...m } : { ...m, id: genId(), clonarDe: m.id });
+    pintarImgs();
     $('#err').hidden = true;
     const del = $('#del');
     del.hidden = !h; del.classList.remove('armed'); del.textContent = 'Eliminar';
     dlg.showModal();
     $('#titulo').focus();
   }
+  dlg.addEventListener('close', () => { edImgs.forEach(m => m._url && URL.revokeObjectURL(m._url)); edImgs = []; });
   $('#add-crit').addEventListener('click', () => {
     const cs = leerCriterios(); cs.push({}); pintar(cs);
     const last = [...document.querySelectorAll('#crit-list [data-k="texto"]')].pop();
@@ -431,7 +655,10 @@ Notas o dependencias:
     const cs = leerCriterios(); cs.splice(rows.indexOf(ev.target.closest('[data-crit]')), 1); pintar(cs);
   });
   $('#cancel').addEventListener('click', () => dlg.close());
-  $('#del').addEventListener('click', () => {
+  async function borrarImagenes(lista) {
+    for (const m of lista) { try { await IDB.del(m.id); } catch (e) {} olvidarUrl(m.id); }
+  }
+  $('#del').addEventListener('click', async () => {
     const d = $('#del');
     if (!d.classList.contains('armed')) {
       const h0 = historias.find(x => x.id === editId);
@@ -444,41 +671,77 @@ Notas o dependencias:
     if (!h) return;
     historias = historias.filter(x => x.id !== h.id);
     guardar(); render();
+    await borrarImagenes(h.imagenes || []);
     toast(`Historia ${codigo(h)} eliminada.`);
   });
-  $('#form').addEventListener('submit', ev => {
+  $('#form').addEventListener('submit', async ev => {
     ev.preventDefault();
     const err = m => { $('#err').textContent = m; $('#err').hidden = false; };
     const titulo = $('#titulo').value.trim();
     if (!titulo) return err('Escribe el título de la historia.');
     const cs = leerCriterios().filter(c => c.texto);
     const prev = editId ? historias.find(x => x.id === editId) : null;
+    const btn = $('#save'); btn.disabled = true;
+    try {
+      for (const m of edImgs) {
+        if (m.blob) await IDB.put(m.id, m.blob);
+        else if (m.clonarDe) { const b = await IDB.get(m.clonarDe); if (b) await IDB.put(m.id, b); }
+      }
+    } catch (e) { btn.disabled = false; return err('No se pudieron guardar las imágenes: el navegador no tiene espacio suficiente.'); }
+    const quitadas = (prev ? prev.imagenes || [] : []).filter(x => !edImgs.some(m => m.id === x.id));
     const h = {
       id: prev ? prev.id : genId(),
       numero: prev ? prev.numero : ++ultimoNumero,
       titulo, descripcion: $('#desc').value.trim(), criterios: cs,
+      imagenes: edImgs.map(({ id, nombre, tipo, ancho, alto }) => ({ id, nombre, tipo, ancho, alto })),
       creado: prev ? (prev.creado || hoy()) : hoy(), actualizado: hoy(),
-      azure: prev ? (prev.azure || null) : null // se conserva el vínculo con Azure para actualizar el mismo elemento
+      azure: prev ? (prev.azure || null) : null,      // se conserva el vínculo con Azure para actualizar el mismo elemento
+      revision: prev ? (prev.revision || null) : null // la revisión queda marcada como desactualizada si cambió el contenido
     };
     if (prev) historias = historias.map(x => x.id === h.id ? h : x); else historias.push(h);
+    btn.disabled = false;
     if (!guardar()) return;
+    await borrarImagenes(quitadas);
     render();
     dlg.close();
     toast(prev ? `Historia ${codigo(h)} actualizada.` : `Historia ${codigo(h)} creada.`);
   });
   $('#new').addEventListener('click', () => abrir(null));
-  $('#list').addEventListener('click', ev => {
-    if (ev.target.closest('[data-new]')) return abrir(null);
-    const e = ev.target.closest('[data-edit]');
-    if (e) return abrir(e.dataset.edit);
-    const d = ev.target.closest('[data-dup]');
-    if (d) { const h = historias.find(x => x.id === d.dataset.dup); if (h) abrir(null, h); }
-  });
+
+  // visor de mockups
+  const visor = $('#visor');
+  async function verImagen(hid, mid) {
+    const h = historias.find(x => x.id === hid);
+    const i = h ? (h.imagenes || []).findIndex(m => m.id === mid) : -1;
+    if (i < 0) return;
+    $('#visor-name').textContent = `${codigo(h)} · Mockup ${i + 1}: ${h.imagenes[i].nombre}`;
+    $('#visor-img').alt = `Mockup ${i + 1} de ${codigo(h)}`;
+    $('#visor-img').src = await urlImg(mid);
+    visor.showModal();
+  }
+  $('#visor-close').addEventListener('click', () => visor.close());
+  visor.addEventListener('click', ev => { if (ev.target === visor) visor.close(); });
+
+  // confirmación propia (la página no usa los diálogos del navegador)
+  const cfDlg = $('#confirm');
+  let cfResolver = null;
+  function confirmar({ titulo, texto, si, no = 'Cancelar', alt = '' }) {
+    $('#cf-title').textContent = titulo; $('#cf-text').textContent = texto;
+    $('#cf-yes').textContent = si; $('#cf-no').textContent = no;
+    $('#cf-alt').textContent = alt; $('#cf-alt').hidden = !alt;
+    cfDlg.showModal();
+    return new Promise(ok => { cfResolver = ok; });
+  }
+  const cerrarCf = r => { cfDlg.close(); if (cfResolver) { cfResolver(r); cfResolver = null; } };
+  $('#cf-yes').addEventListener('click', () => cerrarCf('si'));
+  $('#cf-no').addEventListener('click', () => cerrarCf('no'));
+  $('#cf-alt').addEventListener('click', () => cerrarCf('alt'));
+  cfDlg.addEventListener('cancel', ev => { ev.preventDefault(); cerrarCf('no'); });
 
   // ---------- Azure DevOps ----------
-  // Las historias se crean como elementos de trabajo con la API REST de Azure DevOps.
-  // Al volver a subir una historia se ACTUALIZA el mismo elemento y se reemplazan su
-  // título, descripción y criterios de aceptación: no quedan criterios antiguos.
+  // Cada historia se crea como elemento de trabajo. Al volver a subirla se ACTUALIZA el mismo
+  // elemento: título, descripción y criterios se reemplazan (no quedan criterios antiguos) y los
+  // mockups se sincronizan como adjuntos (se suben los nuevos y se quitan los que borraste).
   const AZ_KEY = 'historias-azure:v1', PAT_KEY = 'historias-azure-pat';
   let az = { org: '', proyecto: '', tipo: 'User Story', area: '', iteracion: '' };
   let pat = '';
@@ -497,7 +760,6 @@ Notas o dependencias:
   const azProy = () => encodeURIComponent(az.proyecto.trim());
   const azListo = () => !!(azBase() && az.proyecto.trim() && pat);
   const destino = () => azBase().toLowerCase() + '|' + az.proyecto.trim().toLowerCase();
-  const firma = h => JSON.stringify([h.titulo, h.descripcion, h.criterios]);
   // nueva: aún no está en este proyecto · al-dia: igual que en Azure · cambios: se editó después de subirla
   const estadoAz = h => !h.azure || h.azure.destino !== destino() ? 'nueva' : h.azure.firma === firma(h) ? 'al-dia' : 'cambios';
 
@@ -518,12 +780,36 @@ Notas o dependencias:
     return data;
   }
   const aHtml = s => esc(s).replace(/\n/g, '<br>');
-  const criteriosHtml = cs => cs.length
-    ? cs.map((c, i) => `<p><b>${caCodigo(i)}.</b> ${aHtml(c.texto)}</p>`).join('')
-    : '';
-  function operaciones(h, crear) {
-    const ops = [{ op: 'add', path: '/fields/System.Title', value: h.titulo }];
-    const desc = h.descripcion ? `<div>${aHtml(h.descripcion)}</div>` : '';
+  const criteriosHtml = cs => cs.length ? cs.map((c, i) => `<p><b>${caCodigo(i)}.</b> ${aHtml(c.texto)}</p>`).join('') : '';
+  async function subir(h) {
+    const est = estadoAz(h);
+    const headers = { 'Content-Type': 'application/json-patch+json' };
+    const imgs = h.imagenes || [];
+    // 1) adjuntos: subir los mockups nuevos
+    const adj = { ...(est !== 'nueva' && h.azure && h.azure.adjuntos ? h.azure.adjuntos : {}) }; // id imagen → url del adjunto
+    const opsRel = [];
+    for (const m of imgs.filter(m => !adj[m.id])) {
+      const blob = await IDB.get(m.id);
+      if (!blob) continue;
+      const r = await azFetch(`${azBase()}/${azProy()}/_apis/wit/attachments?fileName=${encodeURIComponent(m.nombre)}&api-version=7.1`,
+        { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: blob });
+      adj[m.id] = r.url;
+      opsRel.push({ op: 'add', path: '/relations/-', value: { rel: 'AttachedFile', url: r.url, attributes: { comment: `Mockup de ${codigo(h)}: ${m.nombre}` } } });
+    }
+    // 2) adjuntos: quitar los mockups que borraste
+    const quitadas = Object.keys(adj).filter(id => !imgs.some(m => m.id === id));
+    const opsQuitar = [];
+    if (quitadas.length && est !== 'nueva') {
+      const wi = await azFetch(`${azBase()}/_apis/wit/workitems/${h.azure.id}?$expand=relations&api-version=7.1`);
+      const borrar = new Set(quitadas.map(id => adj[id]));
+      (wi.relations || []).map((r, i) => ({ r, i })).filter(x => x.r.rel === 'AttachedFile' && borrar.has(x.r.url))
+        .map(x => x.i).sort((a, b) => b - a).forEach(i => opsQuitar.push({ op: 'remove', path: `/relations/${i}` }));
+    }
+    quitadas.forEach(id => delete adj[id]);
+    // 3) campos: título, descripción (con los mockups a la vista) y criterios
+    const mock = imgs.filter(m => adj[m.id]).map((m, i) => `<p><b>Mockup ${i + 1}: ${esc(m.nombre)}</b><br><img src="${esc(adj[m.id])}" alt="${esc(m.nombre)}"></p>`).join('');
+    const desc = (h.descripcion ? `<div>${aHtml(h.descripcion)}</div>` : '') + (mock ? `<h3>Mockups</h3>${mock}` : '');
+    const ops = [...opsQuitar, { op: 'add', path: '/fields/System.Title', value: h.titulo }];
     if (az.tipo === 'Issue') {
       // el proceso Basic no tiene campo de criterios: van al final de la descripción
       ops.push({ op: 'add', path: '/fields/System.Description', value: desc + (h.criterios.length ? '<h3>Criterios de aceptación</h3>' + criteriosHtml(h.criterios) : '') });
@@ -531,42 +817,34 @@ Notas o dependencias:
       ops.push({ op: 'add', path: '/fields/System.Description', value: desc });
       ops.push({ op: 'add', path: '/fields/Microsoft.VSTS.Common.AcceptanceCriteria', value: criteriosHtml(h.criterios) });
     }
-    if (crear) {
+    if (est === 'nueva') {
       ops.push({ op: 'add', path: '/fields/System.Tags', value: codigo(h) + '; Historia de usuario' });
       if (az.area.trim()) ops.push({ op: 'add', path: '/fields/System.AreaPath', value: az.area.trim() });
       if (az.iteracion.trim()) ops.push({ op: 'add', path: '/fields/System.IterationPath', value: az.iteracion.trim() });
     }
-    return ops;
-  }
-  async function subir(h) {
-    const est = estadoAz(h);
-    const headers = { 'Content-Type': 'application/json-patch+json' };
+    ops.push(...opsRel);
     let data;
     if (est !== 'nueva') {
       try {
-        data = await azFetch(`${azBase()}/_apis/wit/workitems/${h.azure.id}?api-version=7.1`, { method: 'PATCH', headers, body: JSON.stringify(operaciones(h, false)) });
+        data = await azFetch(`${azBase()}/_apis/wit/workitems/${h.azure.id}?api-version=7.1`, { method: 'PATCH', headers, body: JSON.stringify(ops) });
       } catch (e) {
         if (e.status !== 404) throw e;
         h.azure = null; // lo borraron en Azure: se crea de nuevo
         return subir(h);
       }
     } else {
-      data = await azFetch(`${azBase()}/${azProy()}/_apis/wit/workitems/$${encodeURIComponent(az.tipo)}?api-version=7.1`, { method: 'POST', headers, body: JSON.stringify(operaciones(h, true)) });
+      data = await azFetch(`${azBase()}/${azProy()}/_apis/wit/workitems/$${encodeURIComponent(az.tipo)}?api-version=7.1`, { method: 'POST', headers, body: JSON.stringify(ops) });
     }
     const url = data && data._links && data._links.html && data._links.html.href;
     h.azure = { id: data.id, url: /^https:\/\//.test(url || '') ? url : `${azBase()}/${azProy()}/_workitems/edit/${data.id}`,
-      destino: destino(), firma: firma(h), subido: new Date().toISOString() };
+      destino: destino(), firma: firma(h), subido: new Date().toISOString(), adjuntos: adj };
     guardar();
     return est;
   }
-
-  // fila de Azure en cada tarjeta
   function azFila(h) {
     const est = estadoAz(h);
-    const fecha = h.azure && h.azure.subido ? new Date(h.azure.subido) : null;
-    const cuando = fecha ? `${fecha.getDate()} ${MESES[fecha.getMonth()]} ${String(fecha.getHours()).padStart(2, '0')}:${String(fecha.getMinutes()).padStart(2, '0')}` : '';
     const txt = est === 'nueva' ? (h.azure ? 'Subida a otro proyecto; aún no está en este' : 'Aún no está en Azure DevOps')
-      : est === 'al-dia' ? `En Azure DevOps · #${h.azure.id} · al día (subida el ${cuando})`
+      : est === 'al-dia' ? `En Azure DevOps · #${h.azure.id} · al día (subida el ${fechaHora(h.azure.subido)})`
       : `En Azure DevOps · #${h.azure.id} · tiene cambios sin subir`;
     const btn = est === 'nueva' ? 'Subir a Azure DevOps' : est === 'cambios' ? 'Actualizar en Azure DevOps' : 'Volver a subir';
     return `<div class="az-row">
@@ -575,6 +853,7 @@ Notas o dependencias:
       <button class="btn${est === 'al-dia' ? '' : ' primary'}" type="button" data-az-up="${esc(h.id)}">${btn}</button>
     </div>`;
   }
+  let subiendo = false;
   function renderAzBarra() {
     const on = azListo();
     $('#az-dot').classList.toggle('on', on);
@@ -584,10 +863,31 @@ Notas o dependencias:
     b.hidden = !on || !pend || subiendo;
     b.textContent = `Subir ${pend === 1 ? '1 pendiente' : pend + ' pendientes'} a Azure DevOps`;
   }
-  let subiendo = false;
+  // antes de subir: avisa si hay ambigüedades importantes sin resolver o historias sin revisar
+  async function puedeSubir(lista) {
+    const conAlta = lista.filter(h => revActual(h) && altasPendientes(h) > 0);
+    const sinRevisar = iaListo() ? lista.filter(h => !revActual(h)) : [];
+    if (!conAlta.length && !sinRevisar.length) return true;
+    const lineas = [];
+    if (conAlta.length) lineas.push(`${conAlta.map(codigo).join(', ')} ${conAlta.length === 1 ? 'tiene' : 'tienen'} ambigüedades importantes sin resolver.`);
+    if (sinRevisar.length) lineas.push(`${sinRevisar.map(codigo).join(', ')} no ${sinRevisar.length === 1 ? 'se ha revisado' : 'se han revisado'} con IA (o ${sinRevisar.length === 1 ? 'cambió' : 'cambiaron'} desde la última revisión).`);
+    const r = await confirmar({
+      titulo: 'Antes de subir a Azure DevOps',
+      texto: lineas.join('\n\n') + '\n\nPuedes revisarlas primero o subirlas igual.',
+      si: 'Subir de todas formas',
+      alt: sinRevisar.length ? 'Revisar con IA primero' : 'Ver las ambigüedades'
+    });
+    if (r === 'alt') {
+      if (sinRevisar.length) await revisar(sinRevisar);
+      else { conAlta.forEach(h => iaAbiertas.add(h.id)); render(); const el = document.getElementById('hu-' + conAlta[0].id); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+      return false;
+    }
+    return r === 'si';
+  }
   async function subirVarias(lista) {
     if (!azListo()) { abrirAz(); return; }
-    if (subiendo) return;
+    if (subiendo || !lista.length) return;
+    if (!(await puedeSubir(lista))) return;
     subiendo = true;
     renderAzBarra();
     let creadas = 0, actualizadas = 0;
@@ -608,17 +908,10 @@ Notas o dependencias:
       toast(`Azure DevOps: ${partes.join(' y ')}.`);
     }
   }
-  $('#list').addEventListener('click', ev => {
-    const b = ev.target.closest('[data-az-up]');
-    if (!b) return;
-    const h = historias.find(x => x.id === b.dataset.azUp);
-    if (h) subirVarias([h]);
-  });
   $('#az-sync-all').addEventListener('click', () => subirVarias(historias.slice().sort((a, b) => (a.numero || 0) - (b.numero || 0)).filter(h => estadoAz(h) !== 'al-dia')));
 
-  // diálogo de conexión
   const azDlg = $('#az-dialog');
-  const azStatus = (msg, cls) => { const el = $('#az-status'); el.textContent = msg; el.className = 'az-status' + (cls ? ' ' + cls : ''); el.hidden = !msg; };
+  const azStatus = (msg, cls) => { const el = $('#az-status'); el.textContent = msg; el.className = 'status' + (cls ? ' ' + cls : ''); el.hidden = !msg; };
   function abrirAz() {
     $('#az-org').value = az.org; $('#az-proj').value = az.proyecto; $('#az-type').value = az.tipo;
     $('#az-area').value = az.area; $('#az-iter').value = az.iteracion;
@@ -680,6 +973,338 @@ Notas o dependencias:
     render();
   });
 
+  // ---------- revisión de ambigüedades con IA (Claude) ----------
+  // Se llama a la API de Claude desde el navegador con la clave que pega el usuario.
+  const IA_KEY = 'historias-ia-key', IA_GLOBAL = 'historias-ia-global:v1';
+  const IA_MODELO = 'claude-opus-5-5';
+  const SDK_URL = 'https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@0.131.0/+esm';
+  let iaKey = '';
+  let revisando = false;
+  let iaGlobal = null; // observaciones entre historias de la última revisión
+  function cargarIa() {
+    try { iaKey = sessionStorage.getItem(IA_KEY) || localStorage.getItem(IA_KEY) || ''; } catch (e) { iaKey = ''; }
+    try { iaGlobal = JSON.parse(localStorage.getItem(IA_GLOBAL) || 'null'); } catch (e) { iaGlobal = null; }
+  }
+  const iaListo = () => !!iaKey;
+  const revActual = h => !!(h.revision && h.revision.firma === firma(h));
+  const altasPendientes = h => (h.revision ? h.revision.hallazgos || [] : []).filter(x => x.severidad === 'alta' && !x.descartado).length;
+  let sdk = null;
+  async function cliente() {
+    if (!sdk) sdk = import(SDK_URL).then(m => m.default);
+    const Anthropic = await sdk;
+    // la clave es del propio usuario y se usa solo en su navegador
+    return { Anthropic, client: new Anthropic({ apiKey: iaKey, dangerouslyAllowBrowser: true }) };
+  }
+  const SISTEMA = `Eres un analista de negocio y QA senior. Revisas historias de usuario escritas en español antes de que se suban al tablero de Azure DevOps. Tu trabajo es encontrar todo lo que se pueda interpretar de más de una forma o que impida desarrollar y probar la historia sin tener que hacer preguntas.
+
+En cada historia revisa la descripción, cada criterio de aceptación (CA-01, CA-02…) y los mockups adjuntos, si los hay. Busca:
+- Términos ambiguos o subjetivos sin un valor concreto (por ejemplo: rápido, fácil, intuitivo, adecuado, varios, según corresponda, etc.).
+- Criterios que no se pueden verificar con una prueba porque no dicen qué resultado observable se espera.
+- Información que falta: actor, objetivo o beneficio, reglas de negocio, validaciones, mensajes de error, permisos o roles, datos de entrada y salida, límites.
+- Contradicciones dentro de la historia o entre la descripción y los criterios.
+- Casos no cubiertos: errores, datos vacíos o inválidos, casos límite, accesos no autorizados.
+- Alcance poco claro: la historia mezcla varias funcionalidades o no dice qué queda fuera.
+- Diferencias entre los mockups y lo que dicen la descripción o los criterios.
+Compara también las historias entre sí: duplicadas, solapadas, en conflicto o con dependencias que no se mencionan.
+
+Cómo responder:
+- Escribe en español claro y directo, para personas de negocio y de desarrollo.
+- En «cita» copia el texto exacto de la historia donde está el problema. Si el problema es algo que falta, deja «cita» vacía.
+- En «ubicacion» indica: Descripción, CA-01, CA-02…, Mockup 1, Mockup 2… o General.
+- En «sugerencia» propone una redacción concreta que elimine la ambigüedad.
+- Usa severidad «alta» cuando el problema impide desarrollar o probar la historia, «media» cuando puede causar retrabajo y «baja» para mejoras de redacción.
+- Los criterios sugeridos siguen el formato del equipo: una sola frase que dice qué se espera de la funcionalidad, por ejemplo «Como usuario, debo poder acceder al portal con mi usuario y contraseña.». Sugiere solo los que faltan; no repitas los existentes.
+- En «preguntas» pon lo que el equipo debe preguntarle al negocio para cerrar las ambigüedades.
+- «claridad» va de 1 (muy ambigua, no se puede desarrollar) a 5 (clara y verificable).
+- Si una historia está bien, devuelve sus listas vacías y claridad 5. No inventes problemas.
+- Devuelve una entrada en «historias» por cada historia recibida, con su código (HU-001…).`;
+  const ESQUEMA = {
+    type: 'object', additionalProperties: false, required: ['historias', 'entre_historias'],
+    properties: {
+      historias: { type: 'array', items: {
+        type: 'object', additionalProperties: false,
+        required: ['codigo', 'claridad', 'resumen', 'hallazgos', 'criterios_sugeridos', 'preguntas'],
+        properties: {
+          codigo: { type: 'string' },
+          claridad: { type: 'integer', enum: [1, 2, 3, 4, 5] },
+          resumen: { type: 'string' },
+          hallazgos: { type: 'array', items: {
+            type: 'object', additionalProperties: false,
+            required: ['tipo', 'severidad', 'ubicacion', 'cita', 'problema', 'sugerencia'],
+            properties: {
+              tipo: { type: 'string', enum: ['Término ambiguo', 'Criterio no verificable', 'Falta información', 'Contradicción', 'Caso no cubierto', 'Alcance poco claro', 'Diferencia con el mockup', 'Otro'] },
+              severidad: { type: 'string', enum: ['alta', 'media', 'baja'] },
+              ubicacion: { type: 'string' }, cita: { type: 'string' }, problema: { type: 'string' }, sugerencia: { type: 'string' }
+            } } },
+          criterios_sugeridos: { type: 'array', items: { type: 'string' } },
+          preguntas: { type: 'array', items: { type: 'string' } }
+        } } },
+      entre_historias: { type: 'array', items: {
+        type: 'object', additionalProperties: false, required: ['historias', 'problema', 'sugerencia'],
+        properties: { historias: { type: 'array', items: { type: 'string' } }, problema: { type: 'string' }, sugerencia: { type: 'string' } } } }
+    }
+  };
+  const textoHistoria = h => [
+    `=== ${codigo(h)} · ${h.titulo} ===`,
+    'Descripción:', h.descripcion || '(sin descripción)', '',
+    'Criterios de aceptación:',
+    ...((h.criterios || []).length ? h.criterios.map((c, i) => `${caCodigo(i)}. ${c.texto}`) : ['(sin criterios)']),
+    (h.imagenes || []).length ? `\nMockups adjuntos: ${h.imagenes.length}` : 'Mockups adjuntos: ninguno'
+  ].join('\n');
+  async function contenidoLote(lote) {
+    const content = [{ type: 'text', text: `Revisa ${plural(lote.length, 'historia de usuario', 'historias de usuario')}.` }];
+    for (const h of lote) {
+      content.push({ type: 'text', text: textoHistoria(h) });
+      for (const [i, m] of (h.imagenes || []).entries()) {
+        const blob = await IDB.get(m.id);
+        if (!blob) continue;
+        const data = (await blobADataUrl(blob)).split(',')[1];
+        content.push({ type: 'text', text: `${codigo(h)} · Mockup ${i + 1}: ${m.nombre}` });
+        content.push({ type: 'image', source: { type: 'base64', media_type: m.tipo, data } });
+      }
+    }
+    return content;
+  }
+  // agrupa para no mandar demasiadas historias o imágenes en una sola revisión
+  function lotes(lista) {
+    const res = []; let act = [], imgs = 0;
+    for (const h of lista) {
+      const n = (h.imagenes || []).length;
+      if (act.length && (act.length >= 8 || imgs + n > 16)) { res.push(act); act = []; imgs = 0; }
+      act.push(h); imgs += n;
+    }
+    if (act.length) res.push(act);
+    return res;
+  }
+  async function revisarLote(lote) {
+    const { Anthropic, client } = await cliente();
+    let msg;
+    try {
+      const stream = client.beta.messages.stream({
+        model: IA_MODELO,
+        max_tokens: 32000,
+        betas: ['server-side-fallback-2026-07-01'],
+        fallbacks: 'default', // si el modelo declina, la API reintenta con otro modelo adecuado
+        output_config: { effort: 'high', format: { type: 'json_schema', schema: ESQUEMA } },
+        system: SISTEMA,
+        messages: [{ role: 'user', content: await contenidoLote(lote) }]
+      });
+      msg = await stream.finalMessage();
+    } catch (e) {
+      if (e instanceof Anthropic.AuthenticationError) throw new Error('Anthropic rechazó la clave de API: revisa que esté bien copiada y activa.');
+      if (e instanceof Anthropic.PermissionDeniedError) throw new Error('La clave de API no tiene permiso para usar este modelo.');
+      if (e instanceof Anthropic.RateLimitError) throw new Error('Se alcanzó el límite de uso de la API. Espera un momento e inténtalo de nuevo.');
+      if (e instanceof Anthropic.BadRequestError) throw new Error('La API rechazó la solicitud: ' + e.message);
+      if (e instanceof Anthropic.APIConnectionError) throw new Error('No se pudo conectar con la API de Claude. Revisa tu conexión a internet.');
+      if (e instanceof Anthropic.APIError) throw new Error(`La API de Claude respondió con un error (${e.status}). Inténtalo de nuevo.`);
+      throw new Error('No se pudo cargar la librería de Claude. Revisa tu conexión a internet.');
+    }
+    if (msg.stop_reason === 'refusal') throw new Error('La IA no pudo revisar estas historias.');
+    if (msg.stop_reason === 'max_tokens') throw new Error('La revisión quedó incompleta porque las historias son muy largas. Revisa menos historias a la vez.');
+    const txt = msg.content.filter(b => b.type === 'text').map(b => b.text).join('');
+    try { return JSON.parse(txt); } catch (e) { throw new Error('La IA devolvió una respuesta que no se pudo leer. Inténtalo de nuevo.'); }
+  }
+  async function revisar(lista) {
+    if (!iaListo()) { abrirIa(); return; }
+    if (revisando || !lista.length) return;
+    revisando = true;
+    renderIaBarra();
+    const grupos = lotes(lista);
+    const entre = [];
+    let nHall = 0, nAltas = 0, error = '';
+    for (const [gi, lote] of grupos.entries()) {
+      $('#ia-review-all').textContent = grupos.length > 1 ? `Revisando con IA… (${gi + 1} de ${grupos.length})` : `Revisando ${plural(lote.length, 'historia', 'historias')} con IA…`;
+      lote.forEach(h => { const b = document.querySelector(`[data-ia-rev="${CSS.escape(h.id)}"]`); if (b) { b.disabled = true; b.textContent = 'Revisando…'; } });
+      try {
+        const r = await revisarLote(lote);
+        for (const h of lote) {
+          const x = (r.historias || []).find(y => String(y.codigo).trim().toUpperCase() === codigo(h)) || null;
+          if (!x) continue;
+          h.revision = {
+            fecha: new Date().toISOString(), firma: firma(h), claridad: x.claridad, resumen: x.resumen,
+            hallazgos: (x.hallazgos || []).map(f => ({ ...f, descartado: false })),
+            sugeridos: x.criterios_sugeridos || [], preguntas: x.preguntas || []
+          };
+          nHall += h.revision.hallazgos.length;
+          nAltas += altasPendientes(h);
+          if (h.revision.hallazgos.length || h.revision.sugeridos.length) iaAbiertas.add(h.id);
+        }
+        entre.push(...(r.entre_historias || []));
+        guardar();
+      } catch (e) { error = e.message; break; }
+    }
+    if (!error || entre.length) {
+      iaGlobal = { fecha: new Date().toISOString(), items: entre };
+      try { localStorage.setItem(IA_GLOBAL, JSON.stringify(iaGlobal)); } catch (e) {}
+    }
+    revisando = false;
+    render();
+    if (error) toast(error, 9000);
+    else toast(nHall ? `Revisión lista: ${plural(nHall, 'ambigüedad encontrada', 'ambigüedades encontradas')}${nAltas ? ` (${nAltas} importante${nAltas === 1 ? '' : 's'})` : ''}.` : 'Revisión lista: no se encontraron ambigüedades.', 6000);
+  }
+  // historias que conviene revisar: las pendientes de subir (o todas si no hay Azure) sin una revisión al día
+  const porRevisar = () => {
+    const base = azListo() ? historias.filter(h => estadoAz(h) !== 'al-dia') : historias;
+    return base.filter(h => !revActual(h)).sort((a, b) => (a.numero || 0) - (b.numero || 0));
+  };
+  function renderIaBarra() {
+    $('#ia-dot').classList.toggle('on', iaListo());
+    $('#ia-label').textContent = iaListo() ? 'IA conectada' : 'Conectar IA';
+    const b = $('#ia-review-all');
+    const n = porRevisar().length;
+    b.hidden = !historias.length || (!n && !revisando);
+    b.disabled = revisando;
+    if (!revisando) b.textContent = `Revisar ambigüedades con IA (${n})`;
+  }
+  function iaFila(h) {
+    const rev = h.revision;
+    const actual = revActual(h);
+    if (!rev) return `<div class="ia-row"><div class="ia-head"><span class="ia-chip"><span class="k">IA</span>Sin revisar</span>
+      <div class="right"><button class="btn ia-btn" type="button" data-ia-rev="${esc(h.id)}">Revisar con IA</button></div></div></div>`;
+    const vivos = (rev.hallazgos || []).filter(x => !x.descartado);
+    const altas = vivos.filter(x => x.severidad === 'alta').length;
+    const abierto = iaAbiertas.has(h.id);
+    const resumen = vivos.length ? `${plural(vivos.length, 'ambigüedad', 'ambigüedades')}${altas ? ` · ${altas} importante${altas === 1 ? '' : 's'}` : ''}` : 'Sin ambigüedades pendientes';
+    const orden = { alta: 0, media: 1, baja: 2 };
+    const hall = (rev.hallazgos || []).map((x, i) => ({ x, i })).sort((a, b) => (a.x.descartado - b.x.descartado) || (orden[a.x.severidad] - orden[b.x.severidad]));
+    return `<div class="ia-row">
+      <div class="ia-head">
+        <span class="ia-chip"><span class="k">IA</span>Claridad ${rev.claridad}/5 · ${resumen}</span>
+        ${actual ? `<span class="hint">revisada el ${fechaHora(rev.fecha)}</span>` : '<span class="ia-old">Cambiaste la historia después de revisarla</span>'}
+        <div class="right">
+          <button class="btn" type="button" data-ia-toggle="${esc(h.id)}">${abierto ? 'Ocultar detalle' : 'Ver detalle'}</button>
+          <button class="btn ia-btn${actual ? '' : ' solid'}" type="button" data-ia-rev="${esc(h.id)}">${actual ? 'Volver a revisar' : 'Revisar de nuevo'}</button>
+        </div>
+      </div>
+      ${abierto ? `<div class="ia-body">
+        ${rev.resumen ? `<p class="ia-res">${esc(rev.resumen)}</p>` : ''}
+        ${hall.length ? `<ul class="hall-list">${hall.map(({ x, i }) => `<li class="hall ${esc(x.severidad)}${x.descartado ? ' descartado' : ''}">
+          <div class="hall-top"><span class="sev ${esc(x.severidad)}">${esc(x.severidad)}</span><span class="tipo">${esc(x.tipo)}</span><span class="ubic">${esc(x.ubicacion)}</span>
+            <button type="button" data-ia-desc="${esc(h.id)}|${i}">${x.descartado ? 'Restaurar' : 'Descartar'}</button></div>
+          ${x.cita ? `<q>${esc(x.cita)}</q>` : ''}
+          <p>${esc(x.problema)}</p>
+          ${x.sugerencia ? `<p class="sug"><b>Sugerencia:</b> ${esc(x.sugerencia)}</p>` : ''}
+        </li>`).join('')}</ul>` : ''}
+        ${(rev.sugeridos || []).length ? `<span class="sec-sum">Criterios sugeridos</span>
+          <ul class="sug-list">${rev.sugeridos.map((t, i) => `<li><p>${esc(t)}</p><button class="btn" type="button" data-ia-add="${esc(h.id)}|${i}">+ Agregar</button></li>`).join('')}</ul>` : ''}
+        ${(rev.preguntas || []).length ? `<span class="sec-sum">Preguntas para el negocio</span>
+          <ul class="preg-list">${rev.preguntas.map(t => `<li>${esc(t)}</li>`).join('')}</ul>` : ''}
+      </div>` : ''}
+    </div>`;
+  }
+  function renderIaGlobal() {
+    const el = $('#ia-global');
+    const items = iaGlobal && iaGlobal.items ? iaGlobal.items : [];
+    el.hidden = !items.length;
+    if (!items.length) return;
+    el.innerHTML = `<h2>Observaciones entre historias (${items.length})</h2>
+      <span class="hint">De la revisión con IA del ${fechaHora(iaGlobal.fecha)}</span>
+      <ul class="hall-list">${items.map(x => `<li class="hall media"><div class="hall-top"><span class="ubic">${esc((x.historias || []).join(', '))}</span></div>
+        <p>${esc(x.problema)}</p>${x.sugerencia ? `<p class="sug"><b>Sugerencia:</b> ${esc(x.sugerencia)}</p>` : ''}</li>`).join('')}</ul>
+      <div><button class="btn btn-sm" type="button" id="ia-global-clear">Ocultar observaciones</button></div>`;
+  }
+  $('#ia-global').addEventListener('click', ev => {
+    if (!ev.target.closest('#ia-global-clear')) return;
+    iaGlobal = null;
+    try { localStorage.removeItem(IA_GLOBAL); } catch (e) {}
+    render();
+  });
+  $('#ia-review-all').addEventListener('click', () => {
+    const lista = porRevisar();
+    if (!lista.length) return toast('Todas las historias ya están revisadas.');
+    revisar(lista);
+  });
+
+  // clics en las tarjetas
+  $('#list').addEventListener('click', ev => {
+    const t = ev.target;
+    let b;
+    if (t.closest('[data-new]')) return abrir(null);
+    if ((b = t.closest('[data-edit]'))) return abrir(b.dataset.edit);
+    if ((b = t.closest('[data-dup]'))) { const h = historias.find(x => x.id === b.dataset.dup); if (h) abrir(null, h); return; }
+    if ((b = t.closest('[data-more]'))) { const id = b.dataset.more; abiertas.has(id) ? abiertas.delete(id) : abiertas.add(id); return render(); }
+    if ((b = t.closest('[data-ver]'))) { const [hid, mid] = b.dataset.ver.split('|'); return verImagen(hid, mid); }
+    if ((b = t.closest('[data-az-up]'))) { const h = historias.find(x => x.id === b.dataset.azUp); if (h) subirVarias([h]); return; }
+    if ((b = t.closest('[data-ia-rev]'))) { const h = historias.find(x => x.id === b.dataset.iaRev); if (h) revisar([h]); return; }
+    if ((b = t.closest('[data-ia-toggle]'))) { const id = b.dataset.iaToggle; iaAbiertas.has(id) ? iaAbiertas.delete(id) : iaAbiertas.add(id); return render(); }
+    if ((b = t.closest('[data-ia-desc]'))) {
+      const [hid, i] = b.dataset.iaDesc.split('|');
+      const h = historias.find(x => x.id === hid);
+      const f = h && h.revision && h.revision.hallazgos[Number(i)];
+      if (f) { f.descartado = !f.descartado; guardar(); render(); }
+      return;
+    }
+    if ((b = t.closest('[data-ia-add]'))) {
+      const [hid, i] = b.dataset.iaAdd.split('|');
+      const h = historias.find(x => x.id === hid);
+      if (!h || !h.revision) return;
+      const [texto] = h.revision.sugeridos.splice(Number(i), 1);
+      if (!texto) return;
+      const alDia = revActual(h);
+      h.criterios.push({ texto });
+      h.actualizado = hoy();
+      if (alDia) h.revision.firma = firma(h); // el cambio viene de la propia revisión: sigue al día
+      guardar(); render();
+      toast(`Criterio agregado a ${codigo(h)} como ${caCodigo(h.criterios.length - 1)}.`);
+    }
+  });
+
+  // diálogo de la clave de IA
+  const iaDlg = $('#ia-dialog');
+  const iaStatus = (msg, cls) => { const el = $('#ia-status'); el.textContent = msg; el.className = 'status' + (cls ? ' ' + cls : ''); el.hidden = !msg; };
+  function abrirIa() {
+    $('#ia-key').value = iaKey;
+    let recordada = false; try { recordada = !!localStorage.getItem(IA_KEY); } catch (e) {}
+    $('#ia-remember').checked = recordada;
+    iaStatus('');
+    iaDlg.showModal();
+    $('#ia-key').focus();
+  }
+  $('#ia-open').addEventListener('click', abrirIa);
+  $('#ia-cancel').addEventListener('click', () => iaDlg.close());
+  $('#ia-test').addEventListener('click', async () => {
+    const k = $('#ia-key').value.trim();
+    if (!k) return iaStatus('Pega tu clave de API de Anthropic.', 'bad');
+    const btn = $('#ia-test'); btn.disabled = true;
+    iaStatus('Probando la clave…');
+    const anterior = iaKey; iaKey = k;
+    try {
+      const { client } = await cliente();
+      const m = await client.models.retrieve(IA_MODELO);
+      iaStatus(`La clave funciona. Se usará ${m.display_name || IA_MODELO}. Pulsa «Guardar clave».`, 'ok');
+    } catch (e) {
+      iaStatus(e && e.status === 401 ? 'Anthropic rechazó la clave: revisa que esté bien copiada y activa.' : 'No se pudo comprobar la clave. Revisa tu conexión a internet.', 'bad');
+    } finally { iaKey = anterior; btn.disabled = false; }
+  });
+  $('#ia-form').addEventListener('submit', ev => {
+    ev.preventDefault();
+    const k = $('#ia-key').value.trim();
+    if (!k) return iaStatus('Pega tu clave de API de Anthropic.', 'bad');
+    iaKey = k;
+    try {
+      sessionStorage.setItem(IA_KEY, k);
+      if ($('#ia-remember').checked) localStorage.setItem(IA_KEY, k); else localStorage.removeItem(IA_KEY);
+    } catch (e) {}
+    iaDlg.close();
+    render();
+    toast('Clave guardada. Ya puedes revisar las historias con IA.');
+  });
+  $('#ia-forget').addEventListener('click', () => {
+    iaKey = '';
+    try { sessionStorage.removeItem(IA_KEY); localStorage.removeItem(IA_KEY); } catch (e) {}
+    $('#ia-key').value = '';
+    iaStatus('Clave olvidada.');
+    render();
+  });
+  // sin clave: copia las instrucciones y las historias para pegarlas en claude.ai
+  $('#ia-copy').addEventListener('click', async () => {
+    const lista = porRevisar().length ? porRevisar() : historias.slice().sort((a, b) => (a.numero || 0) - (b.numero || 0));
+    if (!lista.length) return iaStatus('No hay historias para revisar.', 'bad');
+    const texto = `${SISTEMA}\n\nResponde con una lista ordenada por historia (hallazgos con severidad, ubicación, cita, problema y sugerencia; criterios sugeridos; preguntas para el negocio) y al final las observaciones entre historias.\n\n${lista.map(textoHistoria).join('\n\n')}`;
+    try { await navigator.clipboard.writeText(texto); iaStatus(`Copiadas ${plural(lista.length, 'historia', 'historias')}. Pégalas en una conversación de claude.ai.`, 'ok'); }
+    catch (e) { iaStatus('El navegador no permitió copiar. Usa una clave de API o inténtalo desde otro navegador.', 'bad'); }
+  });
+
   // ---------- descargas ----------
   function descargar(nombre, blob) {
     const url = URL.createObjectURL(blob);
@@ -714,18 +1339,18 @@ Notas o dependencias:
       wb.creator = 'Historias de Usuario'; wb.created = new Date();
       const ws = wb.addWorksheet('Historias de usuario', { views: [{ state: 'frozen', ySplit: 3 }],
         pageSetup: { orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
-      ws.columns = [{ width: 10 }, { width: 32 }, { width: 70 }, { width: 9 }, { width: 70 }];
-      ws.mergeCells('A1:E1');
+      ws.columns = [{ width: 10 }, { width: 32 }, { width: 70 }, { width: 11 }, { width: 9 }, { width: 70 }];
+      ws.mergeCells('A1:F1');
       ws.getCell('A1').value = 'Historias de usuario';
       ws.getCell('A1').font = { size: 18, bold: true };
       const hs = historias.slice().sort((a, b) => (a.numero || 0) - (b.numero || 0));
-      ws.mergeCells('A2:E2');
+      ws.mergeCells('A2:F2');
       ws.getCell('A2').value = `${hs.length} historias · generado el ${fechaLarga()}`;
       ws.getCell('A2').font = { color: { argb: 'FF5A6675' } };
       const line = { style: 'thin', color: { argb: 'FFD5DBE3' } };
       const border = { top: line, bottom: line, left: line, right: line };
       const hr = ws.getRow(3);
-      hr.values = ['Código', 'Historia', 'Descripción', 'Criterio', 'Criterio de aceptación'];
+      hr.values = ['Código', 'Historia', 'Descripción', 'Mockups', 'Criterio', 'Criterio de aceptación'];
       hr.eachCell(c => { c.font = { bold: true, color: { argb: 'FFFFFFFF' } }; c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F2A37' } }; c.alignment = { horizontal: 'center', vertical: 'middle' }; c.border = border; });
       let r = 4;
       hs.forEach((h, i) => {
@@ -733,10 +1358,11 @@ Notas o dependencias:
         const fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: i % 2 ? 'FFF5F7FA' : 'FFFFFFFF' } };
         cs.forEach((c, j) => {
           const row = ws.getRow(r++);
-          row.values = [codigo(h), h.titulo || '', h.descripcion || '', c ? caCodigo(j) : '', c ? c.texto : '(sin criterios)'];
+          row.values = [codigo(h), h.titulo || '', h.descripcion || '', (h.imagenes || []).length, c ? caCodigo(j) : '', c ? c.texto : '(sin criterios)'];
           row.eachCell({ includeEmpty: true }, cell => { cell.border = border; cell.fill = fill; cell.alignment = { vertical: 'top', wrapText: true }; });
           row.getCell(1).font = { bold: true, color: { argb: 'FF2453C9' } };
           row.getCell(4).alignment = { vertical: 'top', horizontal: 'center' };
+          row.getCell(5).alignment = { vertical: 'top', horizontal: 'center' };
         });
       });
       const buf = await wb.xlsx.writeBuffer();
@@ -750,11 +1376,15 @@ Notas o dependencias:
     }
   });
 
-  // ---------- respaldo ----------
-  $('#bk-export').addEventListener('click', () => {
-    const data = { app: 'historias-usuario', version: 1, exportado: new Date().toISOString(), ultimoNumero, historias };
-    descargar(`respaldo-historias-${hoy()}.json`, new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
-    toast(`Respaldo descargado (${historias.length === 1 ? '1 historia' : historias.length + ' historias'}).`);
+  // ---------- respaldo (incluye los mockups) ----------
+  $('#bk-export').addEventListener('click', async () => {
+    const imagenes = {};
+    for (const h of historias) for (const m of h.imagenes || []) {
+      try { const b = await IDB.get(m.id); if (b) imagenes[m.id] = await blobADataUrl(b); } catch (e) {}
+    }
+    const data = { app: 'historias-usuario', version: 2, exportado: new Date().toISOString(), ultimoNumero, historias, imagenes };
+    descargar(`respaldo-historias-${hoy()}.json`, new Blob([JSON.stringify(data)], { type: 'application/json' }));
+    toast(`Respaldo descargado (${plural(historias.length, 'historia', 'historias')}).`);
   });
   $('#bk-import').addEventListener('click', () => $('#bk-file').click());
   $('#bk-file').addEventListener('change', ev => {
@@ -762,23 +1392,30 @@ Notas o dependencias:
     ev.target.value = '';
     if (!f) return;
     const rd = new FileReader();
-    rd.onload = () => {
+    rd.onload = async () => {
       let obj;
       try { obj = JSON.parse(rd.result); } catch (e) { toast('El archivo no es un respaldo válido.'); return; }
       if (!obj || obj.app !== 'historias-usuario' || !Array.isArray(obj.historias)) { toast('El archivo no es un respaldo de historias de usuario.'); return; }
+      const imgs = obj.imagenes && typeof obj.imagenes === 'object' ? obj.imagenes : {};
       const validas = obj.historias.filter(h => h && typeof h.id === 'string' && typeof h.titulo === 'string')
         .map(h => ({ id: h.id, numero: Number(h.numero) || 0, titulo: h.titulo, descripcion: String(h.descripcion || ''),
           criterios: (Array.isArray(h.criterios) ? h.criterios : []).map(normCrit),
+          imagenes: (Array.isArray(h.imagenes) ? h.imagenes : []).map(normImg).filter(m => m && typeof imgs[m.id] === 'string' && /^data:image\/(png|jpeg|gif|webp);base64,/.test(imgs[m.id])),
           creado: h.creado || hoy(), actualizado: h.actualizado || hoy(),
           azure: h.azure && Number.isInteger(h.azure.id) && /^https:\/\//.test(String(h.azure.url || '')) ? {
-            id: h.azure.id, url: String(h.azure.url), destino: String(h.azure.destino || ''), firma: String(h.azure.firma || ''), subido: String(h.azure.subido || '')
-          } : null }));
+            id: h.azure.id, url: String(h.azure.url), destino: String(h.azure.destino || ''), firma: String(h.azure.firma || ''), subido: String(h.azure.subido || ''),
+            adjuntos: h.azure.adjuntos && typeof h.azure.adjuntos === 'object' ? Object.fromEntries(Object.entries(h.azure.adjuntos).filter(([, u]) => /^https:\/\//.test(String(u)))) : {}
+          } : null,
+          revision: null }));
+      try {
+        for (const h of validas) for (const m of h.imagenes) { await IDB.put(m.id, await dataUrlABlob(imgs[m.id])); olvidarUrl(m.id); }
+      } catch (e) { toast('No se pudieron guardar las imágenes del respaldo: el navegador no tiene espacio suficiente.'); return; }
       const porId = new Map(historias.map(h => [h.id, h]));
       validas.forEach(h => porId.set(h.id, h));
       historias = [...porId.values()];
       ultimoNumero = Math.max(ultimoNumero, Number(obj.ultimoNumero) || 0, ...historias.map(h => h.numero || 0));
       guardar(); render();
-      toast(`Respaldo importado: ${validas.length === 1 ? '1 historia' : validas.length + ' historias'}.`);
+      toast(`Respaldo importado: ${plural(validas.length, 'historia', 'historias')}.`);
     };
     rd.onerror = () => toast('No se pudo leer el archivo.');
     rd.readAsText(f);
@@ -805,6 +1442,7 @@ Notas o dependencias:
 
   cargar();
   cargarAz();
+  cargarIa();
   render();
 })();
 </script>
