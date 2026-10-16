@@ -150,6 +150,8 @@ details summary { cursor: pointer; color: var(--accent); font-size: 13px; }
 mark.pd { background: color-mix(in srgb, var(--bad) 18%, transparent); color: var(--bad); font-weight: 600; padding: 0 2px; }
 .fix-cambios li::before { content: "✓"; color: var(--ok); }
 .fix-pd { padding: 10px 12px; border-radius: 6px; border: 1px solid color-mix(in srgb, var(--warn) 45%, var(--line)); }
+.row-input { display: flex; gap: 8px; }
+.row-input input { flex: 1; min-width: 0; }
 .prop { display: grid; gap: 6px; padding: 8px 10px; border-radius: 6px; background: var(--surface-2); }
 .prop p { margin: 0; }
 .prop-btns { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -318,21 +320,45 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
 
 <dialog id="ia-dialog" aria-labelledby="ia-title">
   <form class="ed" id="ia-form" novalidate>
-    <div class="ed-top"><h3 id="ia-title">Revisión con IA (Claude)</h3></div>
-    <p class="note">La IA lee cada historia (descripción, criterios y mockups) y te indica las ambigüedades: términos vagos, criterios que no se pueden probar, información que falta, contradicciones, casos no cubiertos y diferencias con los mockups. También compara las historias entre sí, propone criterios faltantes y preguntas para el negocio.</p>
-    <div class="field"><label for="ia-key">Clave de API de Anthropic</label>
-      <input id="ia-key" type="password" autocomplete="off" spellcheck="false" placeholder="sk-ant-…">
-      <span class="hint">Créala en <b>console.anthropic.com</b> → <b>API keys</b>. Se usa el modelo <b>Claude Opus 5.5</b>; cada revisión tiene un costo según el largo de las historias (normalmente unos centavos de dólar). Te recomendamos fijar un límite de gasto en la consola. La clave solo se envía a Anthropic.</span></div>
-    <label class="check"><input type="checkbox" id="ia-remember"> Recordar la clave en este navegador. Si no lo marcas, se olvida al cerrar la pestaña.</label>
+    <div class="ed-top"><h3 id="ia-title">Conectar una IA</h3></div>
+    <p class="note">La IA lee cada historia (descripción, criterios y mockups) y te indica las ambigüedades: términos vagos, criterios que no se pueden probar, información que falta, contradicciones, casos no cubiertos y diferencias con los mockups. También compara las historias entre sí, propone criterios faltantes y preguntas para el negocio, y puede corregirlas. Usa la IA que prefieras.</p>
+    <div class="grid2">
+      <div class="field full"><label for="ia-prov">Proveedor de IA</label>
+        <select id="ia-prov">
+          <option value="anthropic">Claude (Anthropic)</option>
+          <option value="openai">OpenAI (ChatGPT)</option>
+          <option value="gemini">Google Gemini</option>
+          <option value="azure">Azure OpenAI (el de tu empresa)</option>
+          <option value="compat">Otra compatible con OpenAI (Groq, Mistral, DeepSeek, OpenRouter, Ollama, LM Studio…)</option>
+        </select></div>
+      <div class="field full" data-p="compat"><label for="ia-base">URL base de la API</label>
+        <input id="ia-base" type="text" autocomplete="off" spellcheck="false" placeholder="Ej.: https://api.groq.com/openai/v1 · http://localhost:11434/v1 (Ollama)"></div>
+      <div class="field full" data-p="azure"><label for="ia-endpoint">Endpoint del recurso de Azure OpenAI</label>
+        <input id="ia-endpoint" type="text" autocomplete="off" spellcheck="false" placeholder="https://mirecurso.openai.azure.com"></div>
+      <div class="field" data-p="azure"><label for="ia-deploy">Nombre de la implementación (deployment)</label>
+        <input id="ia-deploy" type="text" autocomplete="off" spellcheck="false" placeholder="Ej.: revisor-historias"></div>
+      <div class="field" data-p="azure"><label for="ia-apiver">Versión de la API</label>
+        <input id="ia-apiver" type="text" autocomplete="off" spellcheck="false" placeholder="2024-10-21"></div>
+      <div class="field full" data-p="openai gemini compat"><label for="ia-model">Modelo</label>
+        <div class="row-input"><input id="ia-model" type="text" list="ia-models" autocomplete="off" spellcheck="false" placeholder="Escribe el nombre del modelo o pulsa «Cargar modelos»">
+          <button class="btn btn-sm" type="button" id="ia-list">Cargar modelos</button></div>
+        <datalist id="ia-models"></datalist></div>
+      <div class="field full" data-p="anthropic"><span class="hint">Se usa el modelo <b>Claude Opus 5.5</b>.</span></div>
+      <div class="field full"><label for="ia-key" id="ia-key-lbl">Clave de API</label>
+        <input id="ia-key" type="password" autocomplete="off" spellcheck="false">
+        <span class="hint" id="ia-key-hint"></span></div>
+      <label class="check full"><input type="checkbox" id="ia-remember"> Recordar la clave en este navegador. Si no lo marcas, se olvida al cerrar la pestaña.</label>
+      <label class="check full"><input type="checkbox" id="ia-imgs"> Enviar los mockups a la IA (desmárcalo si tu modelo no acepta imágenes)</label>
+    </div>
     <p class="status" id="ia-status" hidden></p>
-    <p class="note">¿No tienes clave? Pulsa <b>Copiar para claude.ai</b>: se copian las instrucciones y tus historias pendientes para pegarlas en una conversación de claude.ai. Las imágenes adjúntalas tú en esa conversación.</p>
+    <p class="note">¿Prefieres no conectar una IA? Pulsa <b>Copiar para cualquier chat</b>: se copian las instrucciones y tus historias pendientes para pegarlas en ChatGPT, Gemini, Copilot, Claude u otro chat de IA. Las imágenes adjúntalas tú en ese chat.</p>
     <div class="ed-foot">
       <button class="btn danger" type="button" id="ia-forget">Olvidar clave</button>
       <div class="right">
-        <button class="btn" type="button" id="ia-copy">Copiar para claude.ai</button>
+        <button class="btn" type="button" id="ia-copy">Copiar para cualquier chat</button>
         <button class="btn" type="button" id="ia-cancel">Cerrar</button>
-        <button class="btn" type="button" id="ia-test">Probar clave</button>
-        <button class="btn primary" type="submit">Guardar clave</button>
+        <button class="btn" type="button" id="ia-test">Probar conexión</button>
+        <button class="btn primary" type="submit">Guardar</button>
       </div>
     </div>
   </form>
@@ -1053,19 +1079,46 @@ Notas o dependencias:
     render();
   });
 
-  // ---------- revisión de ambigüedades con IA (Claude) ----------
-  // Se llama a la API de Claude desde el navegador con la clave que pega el usuario.
-  const IA_KEY = 'historias-ia-key', IA_GLOBAL = 'historias-ia-global:v1';
+  // ---------- revisión de ambigüedades con IA (cualquier proveedor) ----------
+  // Se llama a la IA elegida directamente desde el navegador, con la clave que pega el usuario.
+  // Proveedores: Claude (SDK oficial de Anthropic), OpenAI, Google Gemini, Azure OpenAI y
+  // cualquier API compatible con OpenAI (Groq, Mistral, DeepSeek, OpenRouter, Ollama, LM Studio…).
+  const IA_CFG = 'historias-ia-config:v1', IA_GLOBAL = 'historias-ia-global:v1';
+  const claveDe = p => 'historias-ia-key:' + p;
   const IA_MODELO = 'claude-opus-5-5';
   const SDK_URL = 'https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@0.131.0/+esm';
+  const PROV = {
+    anthropic: { nombre: 'Claude', ph: 'sk-ant-…', ayuda: 'Créala en <b>console.anthropic.com</b> → <b>API keys</b>.' },
+    openai: { nombre: 'OpenAI', ph: 'sk-…', ayuda: 'Créala en <b>platform.openai.com</b> → <b>API keys</b>.' },
+    gemini: { nombre: 'Gemini', ph: 'AIza…', ayuda: 'Créala en <b>aistudio.google.com</b> → <b>Get API key</b>.' },
+    azure: { nombre: 'Azure OpenAI', ph: 'Clave del recurso', ayuda: 'En el portal de Azure: tu recurso de Azure OpenAI → <b>Claves y punto de conexión</b>.' },
+    compat: { nombre: 'IA compatible', ph: 'Clave del proveedor (vacía si es local)', ayuda: 'La clave de ese proveedor. Para Ollama o LM Studio en tu computadora puedes dejarla vacía.' }
+  };
+  let ia = { prov: 'anthropic', modelos: {}, base: '', endpoint: '', deploy: '', apiVer: '2024-10-21', imgs: true };
   let iaKey = '';
   let revisando = false;
   let iaGlobal = null; // observaciones entre historias de la última revisión
+  const leerClave = p => { try { return sessionStorage.getItem(claveDe(p)) || localStorage.getItem(claveDe(p)) || ''; } catch (e) { return ''; } };
   function cargarIa() {
-    try { iaKey = sessionStorage.getItem(IA_KEY) || localStorage.getItem(IA_KEY) || ''; } catch (e) { iaKey = ''; }
+    try { ia = { ...ia, ...JSON.parse(localStorage.getItem(IA_CFG) || '{}') }; ia.modelos = ia.modelos || {}; } catch (e) {}
+    // la versión anterior solo guardaba una clave de Claude
+    try {
+      const vieja = sessionStorage.getItem('historias-ia-key') || localStorage.getItem('historias-ia-key');
+      if (vieja) {
+        sessionStorage.setItem(claveDe('anthropic'), vieja);
+        if (localStorage.getItem('historias-ia-key')) localStorage.setItem(claveDe('anthropic'), vieja);
+        sessionStorage.removeItem('historias-ia-key'); localStorage.removeItem('historias-ia-key');
+      }
+    } catch (e) {}
+    iaKey = leerClave(ia.prov);
     try { iaGlobal = JSON.parse(localStorage.getItem(IA_GLOBAL) || 'null'); } catch (e) { iaGlobal = null; }
   }
-  const iaListo = () => !!iaKey;
+  const modeloIA = () => (ia.modelos[ia.prov] || '').trim();
+  const iaListo = () => ia.prov === 'anthropic' ? !!iaKey
+    : ia.prov === 'azure' ? !!(iaKey && ia.endpoint && ia.deploy)
+    : ia.prov === 'compat' ? !!(ia.base && modeloIA())
+    : !!(iaKey && modeloIA());
+  const iaEtiqueta = () => ia.prov === 'anthropic' ? 'Claude Opus 5.5' : ia.prov === 'azure' ? `Azure OpenAI · ${ia.deploy}` : `${PROV[ia.prov].nombre} · ${modeloIA()}`;
   const revActual = h => !!(h.revision && h.revision.firma === firma(h));
   const altasPendientes = h => (h.revision ? h.revision.hallazgos || [] : []).filter(x => x.severidad === 'alta' && !x.descartado && !x.aplicado).length;
   // criterio listo para usar de un hallazgo; en revisiones antiguas (sin ese campo) se usa la sugerencia si apunta a un CA
@@ -1164,8 +1217,114 @@ Cómo responder:
   async function revisarLote(lote) {
     return pedirJSON(SISTEMA, await contenidoLote(lote), ESQUEMA, 32000, 'revisar estas historias');
   }
-  // llamada a Claude que devuelve JSON con el esquema indicado
+  // pide a la IA elegida una respuesta JSON con el esquema indicado.
+  // content usa bloques { type: 'text' } e { type: 'image', source: { media_type, data } }
   async function pedirJSON(sistema, content, esquema, maxTokens, tarea) {
+    if (!ia.imgs) content = content.filter(b => b.type !== 'image');
+    if (ia.prov === 'anthropic') return pedirClaude(sistema, content, esquema, maxTokens, tarea);
+    if (ia.prov === 'gemini') return pedirGemini(sistema, content, esquema, tarea);
+    return pedirOpenAI(sistema, content, esquema, tarea);
+  }
+  // extrae el JSON aunque el modelo lo envuelva en texto o en un bloque de código
+  function leerJSON(txt) {
+    const s = String(txt || '').trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
+    try { return JSON.parse(s); } catch (e) {}
+    const a = s.indexOf('{'), b = s.lastIndexOf('}');
+    if (a >= 0 && b > a) { try { return JSON.parse(s.slice(a, b + 1)); } catch (e) {} }
+    throw new Error('La IA devolvió una respuesta que no se pudo leer. Inténtalo de nuevo o prueba con otro modelo.');
+  }
+  const instruccionJSON = esquema => `\n\nResponde ÚNICAMENTE con un objeto JSON válido, sin texto adicional ni bloques de código, que cumpla este esquema JSON:\n${JSON.stringify(esquema)}`;
+  async function httpIA(url, opts) {
+    let res;
+    try { res = await fetch(url, opts); }
+    catch (e) {
+      // OpenAI no deja leer el error de una clave inválida desde el navegador: se ve como fallo de conexión
+      if (ia.prov === 'openai') throw new Error('No se pudo conectar con OpenAI. Lo más común es que la clave esté mal copiada o inactiva: revísala con «Probar conexión». Si es correcta, revisa tu conexión a internet.');
+      throw new Error(`No se pudo conectar con ${PROV[ia.prov].nombre}. Revisa la dirección y tu conexión a internet. Algunos proveedores o servidores locales no aceptan conexiones desde una página web (CORS); en ese caso actívalo en el servidor o usa «Copiar para cualquier chat».`);
+    }
+    const txt = await res.text();
+    let data = null;
+    try { data = txt ? JSON.parse(txt) : null; } catch (e) {}
+    if (!res.ok) {
+      const d = data && (data.error ? (data.error.message || data.error) : data.message);
+      const err = new Error(String(d || txt || res.statusText).slice(0, 300));
+      err.status = res.status;
+      throw err;
+    }
+    return data;
+  }
+  function errorIA(e) {
+    const n = PROV[ia.prov].nombre;
+    if (e.status === 401 || e.status === 403 || (e.status === 400 && /api.?key/i.test(e.message))) return `${n} rechazó la clave: revisa que esté bien copiada, activa y con permisos.`;
+    if (e.status === 404) return `${n} no encontró el modelo o la dirección. Revisa el nombre del modelo (o del deployment) y la URL.`;
+    if (e.status === 429) return `Se alcanzó el límite de uso o de saldo en ${n}. Espera un momento o revisa tu plan.`;
+    if (e.status) return `${n} respondió con un error (${e.status}): ${e.message}`;
+    return e.message;
+  }
+  // OpenAI, Azure OpenAI y APIs compatibles: Chat Completions
+  async function pedirOpenAI(sistema, content, esquema, tarea) {
+    let url;
+    const headers = { 'Content-Type': 'application/json' };
+    if (ia.prov === 'azure') {
+      url = `${ia.endpoint.trim().replace(/\/+$/, '')}/openai/deployments/${encodeURIComponent(ia.deploy.trim())}/chat/completions?api-version=${encodeURIComponent(ia.apiVer.trim() || '2024-10-21')}`;
+      headers['api-key'] = iaKey;
+    } else {
+      url = (ia.prov === 'openai' ? 'https://api.openai.com/v1' : ia.base.trim().replace(/\/+$/, '')) + '/chat/completions';
+      if (iaKey) headers.Authorization = 'Bearer ' + iaKey;
+    }
+    const usuario = { role: 'user', content: content.map(b => b.type === 'image'
+      ? { type: 'image_url', image_url: { url: `data:${b.source.media_type};base64,${b.source.data}` } }
+      : { type: 'text', text: b.text }) };
+    const base = ia.prov === 'azure' ? {} : { model: modeloIA() };
+    // no todos los modelos aceptan salida con esquema: se prueba de lo más estricto a lo más simple
+    const intentos = [
+      { ...base, messages: [{ role: 'system', content: sistema }, usuario], response_format: { type: 'json_schema', json_schema: { name: 'respuesta', strict: true, schema: esquema } } },
+      { ...base, messages: [{ role: 'system', content: sistema + instruccionJSON(esquema) }, usuario], response_format: { type: 'json_object' } },
+      { ...base, messages: [{ role: 'system', content: sistema + instruccionJSON(esquema) }, usuario] }
+    ];
+    let ultimo = null;
+    for (const body of intentos) {
+      let data;
+      try { data = await httpIA(url, { method: 'POST', headers, body: JSON.stringify(body) }); }
+      catch (e) { ultimo = e; if (e.status === 400 || e.status === 422) continue; throw new Error(errorIA(e)); }
+      const ch = data && data.choices && data.choices[0];
+      if (!ch || !ch.message) throw new Error('La IA no devolvió respuesta. Inténtalo de nuevo.');
+      if (ch.message.refusal) throw new Error(`La IA no pudo ${tarea}.`);
+      if (ch.finish_reason === 'length') throw new Error('La respuesta quedó incompleta porque el texto es muy largo. Inténtalo con menos historias a la vez.');
+      return leerJSON(ch.message.content);
+    }
+    throw new Error(errorIA(ultimo) + (ia.imgs ? ' Si tu modelo no acepta imágenes, desmarca «Enviar los mockups a la IA».' : ''));
+  }
+  // Google Gemini: generateContent con salida JSON
+  const aEsquemaGemini = s => {
+    if (!s || typeof s !== 'object') return s;
+    const o = {};
+    if (s.type) o.type = String(s.type).toUpperCase();
+    if (s.enum && s.type === 'string') o.enum = s.enum;
+    if (s.properties) {
+      o.properties = Object.fromEntries(Object.entries(s.properties).map(([k, v]) => [k, aEsquemaGemini(v)]));
+      o.required = s.required;
+      o.propertyOrdering = Object.keys(s.properties);
+    }
+    if (s.items) o.items = aEsquemaGemini(s.items);
+    return o;
+  };
+  async function pedirGemini(sistema, content, esquema, tarea) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modeloIA().replace(/^models\//, ''))}:generateContent`;
+    const parts = content.map(b => b.type === 'image' ? { inlineData: { mimeType: b.source.media_type, data: b.source.data } } : { text: b.text });
+    const body = { systemInstruction: { parts: [{ text: sistema }] }, contents: [{ role: 'user', parts }],
+      generationConfig: { responseMimeType: 'application/json', responseSchema: aEsquemaGemini(esquema) } };
+    let data;
+    try { data = await httpIA(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': iaKey }, body: JSON.stringify(body) }); }
+    catch (e) { throw new Error(errorIA(e)); }
+    const c = data && data.candidates && data.candidates[0];
+    if (!c) throw new Error(data && data.promptFeedback && data.promptFeedback.blockReason ? `La IA no pudo ${tarea}.` : 'La IA no devolvió respuesta. Inténtalo de nuevo.');
+    if (c.finishReason === 'MAX_TOKENS') throw new Error('La respuesta quedó incompleta porque el texto es muy largo. Inténtalo con menos historias a la vez.');
+    if (['SAFETY', 'PROHIBITED_CONTENT', 'BLOCKLIST', 'RECITATION'].includes(c.finishReason)) throw new Error(`La IA no pudo ${tarea}.`);
+    return leerJSON(((c.content && c.content.parts) || []).map(p => p.text || '').join(''));
+  }
+  // Claude: SDK oficial de Anthropic
+  async function pedirClaude(sistema, content, esquema, maxTokens, tarea) {
     const { Anthropic, client } = await cliente();
     let msg;
     try {
@@ -1190,8 +1349,7 @@ Cómo responder:
     }
     if (msg.stop_reason === 'refusal') throw new Error(`La IA no pudo ${tarea}.`);
     if (msg.stop_reason === 'max_tokens') throw new Error('La respuesta quedó incompleta porque el texto es muy largo. Inténtalo con menos historias a la vez.');
-    const txt = msg.content.filter(b => b.type === 'text').map(b => b.text).join('');
-    try { return JSON.parse(txt); } catch (e) { throw new Error('La IA devolvió una respuesta que no se pudo leer. Inténtalo de nuevo.'); }
+    return leerJSON(msg.content.filter(b => b.type === 'text').map(b => b.text).join(''));
   }
 
   // ---------- corrección automática con IA ----------
@@ -1364,7 +1522,8 @@ Reglas:
   };
   function renderIaBarra() {
     $('#ia-dot').classList.toggle('on', iaListo());
-    $('#ia-label').textContent = iaListo() ? 'IA conectada' : 'Conectar IA';
+    $('#ia-label').textContent = iaListo() ? `IA: ${PROV[ia.prov].nombre}` : 'Conectar IA';
+    $('#ia-open').title = iaListo() ? `Conectada a ${iaEtiqueta()}` : 'Elige la IA que revisará y corregirá las historias';
     const b = $('#ia-review-all');
     const n = porRevisar().length;
     b.hidden = !historias.length || (!n && !revisando);
@@ -1534,57 +1693,126 @@ Reglas:
   // diálogo de la clave de IA
   const iaDlg = $('#ia-dialog');
   const iaStatus = (msg, cls) => { const el = $('#ia-status'); el.textContent = msg; el.className = 'status' + (cls ? ' ' + cls : ''); el.hidden = !msg; };
-  function abrirIa() {
-    $('#ia-key').value = iaKey;
-    let recordada = false; try { recordada = !!localStorage.getItem(IA_KEY); } catch (e) {}
+  // muestra los campos del proveedor elegido en el formulario
+  function pintarProv() {
+    const p = $('#ia-prov').value;
+    document.querySelectorAll('#ia-dialog [data-p]').forEach(el => { el.hidden = !el.dataset.p.split(' ').includes(p); });
+    $('#ia-key-lbl').textContent = p === 'compat' ? 'Clave de API (opcional si es local)' : `Clave de API de ${PROV[p].nombre}`;
+    $('#ia-key').placeholder = PROV[p].ph;
+    $('#ia-key-hint').innerHTML = `${PROV[p].ayuda} Cada revisión o corrección tiene un costo según el proveedor y el largo de las historias. La clave solo se envía a ese proveedor.`;
+    $('#ia-key').value = p === ia.prov ? iaKey : leerClave(p);
+    $('#ia-model').value = ia.modelos[p] || '';
+    $('#ia-models').innerHTML = '';
+    let recordada = false; try { recordada = !!localStorage.getItem(claveDe(p)); } catch (e) {}
     $('#ia-remember').checked = recordada;
+  }
+  function abrirIa() {
+    $('#ia-prov').value = ia.prov;
+    $('#ia-base').value = ia.base; $('#ia-endpoint').value = ia.endpoint; $('#ia-deploy').value = ia.deploy; $('#ia-apiver').value = ia.apiVer;
+    $('#ia-imgs').checked = ia.imgs !== false;
+    pintarProv();
     iaStatus('');
     iaDlg.showModal();
-    $('#ia-key').focus();
+    $('#ia-prov').focus();
   }
+  $('#ia-prov').addEventListener('change', () => { pintarProv(); iaStatus(''); });
+  // lee el formulario a la configuración; devuelve un mensaje si falta algo
+  function leerIa() {
+    const p = $('#ia-prov').value;
+    const nuevo = { ...ia, prov: p, modelos: { ...ia.modelos, [p]: $('#ia-model').value.trim() }, base: $('#ia-base').value.trim(),
+      endpoint: $('#ia-endpoint').value.trim(), deploy: $('#ia-deploy').value.trim(), apiVer: $('#ia-apiver').value.trim() || '2024-10-21', imgs: $('#ia-imgs').checked };
+    const k = $('#ia-key').value.trim();
+    if (p !== 'compat' && !k) return `Pega tu clave de API de ${PROV[p].nombre}.`;
+    if (p === 'compat' && !/^https?:\/\//i.test(nuevo.base)) return 'Escribe la URL base de la API (empieza con https:// o http://).';
+    if (p === 'azure' && !/^https:\/\//i.test(nuevo.endpoint)) return 'Escribe el endpoint del recurso (https://….openai.azure.com).';
+    if (p === 'azure' && !nuevo.deploy) return 'Escribe el nombre de la implementación (deployment).';
+    if (['openai', 'gemini', 'compat'].includes(p) && !nuevo.modelos[p]) return 'Escribe el nombre del modelo o pulsa «Cargar modelos».';
+    ia = nuevo; iaKey = k;
+    return '';
+  }
+  // lista los modelos disponibles del proveedor para elegir
+  async function listarModelos(p, k) {
+    if (p === 'gemini') {
+      const d = await httpIA('https://generativelanguage.googleapis.com/v1beta/models?pageSize=200', { headers: { 'x-goog-api-key': k } });
+      return (d.models || []).filter(m => (m.supportedGenerationMethods || []).includes('generateContent')).map(m => m.name.replace(/^models\//, ''));
+    }
+    const base = p === 'openai' ? 'https://api.openai.com/v1' : $('#ia-base').value.trim().replace(/\/+$/, '');
+    const d = await httpIA(base + '/models', { headers: k ? { Authorization: 'Bearer ' + k } : {} });
+    return (d.data || d.models || []).map(m => m.id || m.name).filter(Boolean);
+  }
+  $('#ia-list').addEventListener('click', async () => {
+    const p = $('#ia-prov').value, k = $('#ia-key').value.trim();
+    if (p !== 'compat' && !k) return iaStatus(`Pega primero tu clave de API de ${PROV[p].nombre}.`, 'bad');
+    if (p === 'compat' && !/^https?:\/\//i.test($('#ia-base').value.trim())) return iaStatus('Escribe primero la URL base de la API.', 'bad');
+    const prev = ia.prov; ia.prov = p; // para que los mensajes de error nombren al proveedor elegido
+    iaStatus('Cargando modelos…');
+    try {
+      const ms = (await listarModelos(p, k)).sort();
+      $('#ia-models').innerHTML = ms.map(m => `<option value="${esc(m)}"></option>`).join('');
+      iaStatus(ms.length ? `${plural(ms.length, 'modelo disponible', 'modelos disponibles')}. Haz clic en el campo «Modelo» para elegir uno.` : 'El proveedor no devolvió modelos; escribe el nombre a mano.', ms.length ? 'ok' : '');
+      if (ms.length) $('#ia-model').focus();
+    } catch (e) { iaStatus(errorIA(e), 'bad'); }
+    finally { ia.prov = prev; }
+  });
   $('#ia-open').addEventListener('click', abrirIa);
   $('#ia-cancel').addEventListener('click', () => iaDlg.close());
   $('#ia-test').addEventListener('click', async () => {
-    const k = $('#ia-key').value.trim();
-    if (!k) return iaStatus('Pega tu clave de API de Anthropic.', 'bad');
+    const respaldo = { ia: { ...ia, modelos: { ...ia.modelos } }, iaKey };
+    const e0 = leerIa();
+    if (e0) { ia = respaldo.ia; iaKey = respaldo.iaKey; return iaStatus(e0, 'bad'); }
     const btn = $('#ia-test'); btn.disabled = true;
-    iaStatus('Probando la clave…');
-    const anterior = iaKey; iaKey = k;
+    iaStatus('Probando la conexión…');
     try {
-      const { client } = await cliente();
-      const m = await client.models.retrieve(IA_MODELO);
-      iaStatus(`La clave funciona. Se usará ${m.display_name || IA_MODELO}. Pulsa «Guardar clave».`, 'ok');
+      if (ia.prov === 'anthropic') {
+        const { client } = await cliente();
+        const m = await client.models.retrieve(IA_MODELO);
+        iaStatus(`La conexión funciona. Se usará ${m.display_name || IA_MODELO}. Pulsa «Guardar».`, 'ok');
+      } else {
+        // primero se valida la clave listando modelos: ese error sí se puede leer desde el navegador
+        if (ia.prov === 'openai' || ia.prov === 'gemini' || ia.prov === 'compat') {
+          let ms = null;
+          try { ms = await listarModelos(ia.prov, iaKey); }
+          catch (e) { if (e.status === 401 || e.status === 403 || ia.prov !== 'compat') throw new Error(errorIA(e)); }
+          if (ms && ms.length && !ms.includes(modeloIA())) throw new Error(`La clave funciona, pero el modelo «${modeloIA()}» no aparece en tu cuenta. Pulsa «Cargar modelos» y elige uno de la lista.`);
+        }
+        // una pregunta mínima con el formato JSON que usa la aplicación
+        const r = await pedirJSON('Responde en español.', [{ type: 'text', text: 'Devuelve {"ok": true}.' }],
+          { type: 'object', additionalProperties: false, required: ['ok'], properties: { ok: { type: 'boolean' } } }, 200, 'responder la prueba');
+        if (!r || r.ok !== true) throw new Error('La IA respondió, pero no en el formato esperado. Prueba con otro modelo.');
+        iaStatus(`La conexión funciona con ${iaEtiqueta()}. Pulsa «Guardar».`, 'ok');
+      }
     } catch (e) {
-      iaStatus(e && e.status === 401 ? 'Anthropic rechazó la clave: revisa que esté bien copiada y activa.' : 'No se pudo comprobar la clave. Revisa tu conexión a internet.', 'bad');
-    } finally { iaKey = anterior; btn.disabled = false; }
+      iaStatus(e && e.status === 401 ? `${PROV[ia.prov].nombre} rechazó la clave: revisa que esté bien copiada y activa.` : (e.message || 'No se pudo comprobar la conexión.'), 'bad');
+    } finally { ia = respaldo.ia; iaKey = respaldo.iaKey; btn.disabled = false; }
   });
   $('#ia-form').addEventListener('submit', ev => {
     ev.preventDefault();
-    const k = $('#ia-key').value.trim();
-    if (!k) return iaStatus('Pega tu clave de API de Anthropic.', 'bad');
-    iaKey = k;
+    const e0 = leerIa();
+    if (e0) return iaStatus(e0, 'bad');
     try {
-      sessionStorage.setItem(IA_KEY, k);
-      if ($('#ia-remember').checked) localStorage.setItem(IA_KEY, k); else localStorage.removeItem(IA_KEY);
+      localStorage.setItem(IA_CFG, JSON.stringify(ia));
+      if (iaKey) sessionStorage.setItem(claveDe(ia.prov), iaKey); else sessionStorage.removeItem(claveDe(ia.prov));
+      if ($('#ia-remember').checked && iaKey) localStorage.setItem(claveDe(ia.prov), iaKey); else localStorage.removeItem(claveDe(ia.prov));
     } catch (e) {}
     iaDlg.close();
     render();
-    toast('Clave guardada. Ya puedes revisar las historias con IA.');
+    toast(`IA conectada: ${iaEtiqueta()}. Ya puedes revisar y corregir las historias.`);
   });
   $('#ia-forget').addEventListener('click', () => {
-    iaKey = '';
-    try { sessionStorage.removeItem(IA_KEY); localStorage.removeItem(IA_KEY); } catch (e) {}
+    const p = $('#ia-prov').value;
+    try { sessionStorage.removeItem(claveDe(p)); localStorage.removeItem(claveDe(p)); } catch (e) {}
+    if (p === ia.prov) iaKey = '';
     $('#ia-key').value = '';
-    iaStatus('Clave olvidada.');
+    iaStatus(`Clave de ${PROV[p].nombre} olvidada.`);
     render();
   });
-  // sin clave: copia las instrucciones y las historias para pegarlas en claude.ai
+  // sin conectar una IA: copia las instrucciones y las historias para pegarlas en cualquier chat
   $('#ia-copy').addEventListener('click', async () => {
     const lista = porRevisar().length ? porRevisar() : historias.slice().sort((a, b) => (a.numero || 0) - (b.numero || 0));
     if (!lista.length) return iaStatus('No hay historias para revisar.', 'bad');
-    const texto = `${SISTEMA}\n\nResponde con una lista ordenada por historia (hallazgos con severidad, ubicación, cita, problema y sugerencia; criterios sugeridos; preguntas para el negocio) y al final las observaciones entre historias.\n\n${lista.map(textoHistoria).join('\n\n')}`;
-    try { await navigator.clipboard.writeText(texto); iaStatus(`Copiadas ${plural(lista.length, 'historia', 'historias')}. Pégalas en una conversación de claude.ai.`, 'ok'); }
-    catch (e) { iaStatus('El navegador no permitió copiar. Usa una clave de API o inténtalo desde otro navegador.', 'bad'); }
+    const texto = `${SISTEMA}\n\nResponde con una lista ordenada por historia (hallazgos con severidad, ubicación, cita, problema, sugerencia y criterio propuesto; criterios sugeridos; preguntas para el negocio) y al final las observaciones entre historias.\n\n${lista.map(textoHistoria).join('\n\n')}`;
+    try { await navigator.clipboard.writeText(texto); iaStatus(`Copiadas ${plural(lista.length, 'historia', 'historias')}. Pégalas en ChatGPT, Gemini, Copilot, Claude u otro chat de IA.`, 'ok'); }
+    catch (e) { iaStatus('El navegador no permitió copiar. Inténtalo desde otro navegador.', 'bad'); }
   });
 
   // ---------- descargas ----------

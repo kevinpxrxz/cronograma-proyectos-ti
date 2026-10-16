@@ -31,7 +31,7 @@ Aplicación independiente del cronograma para escribir historias de usuario y su
 
 - **Historias:** código automático (HU-001, HU-002…), título y una **descripción extensa**. El botón *"Insertar guía de descripción"* agrega una estructura con: Como… quiero… para…, contexto, detalle de la funcionalidad, reglas de negocio, fuera de alcance y notas. La aplicación avisa si la descripción es corta.
 - **Mockups e imágenes:** hasta 10 por historia. Se agregan arrastrándolas, con el botón *"Elegir imágenes"* o pegando una captura con Ctrl + V. Las imágenes muy grandes se reducen automáticamente. Se ven en miniatura y se amplían con un clic, se incluyen en el respaldo y se suben a Azure DevOps como adjuntos visibles en la descripción.
-- **Revisión de ambigüedades con IA (Claude Opus 5.5):** con tu clave de API de Anthropic, la IA revisa la descripción, los criterios y los mockups de cada historia y señala:
+- **Revisión de ambigüedades con la IA que elijas:** Claude, OpenAI (ChatGPT), Google Gemini, Azure OpenAI o cualquier API compatible con OpenAI (Groq, Mistral, DeepSeek, OpenRouter, Ollama, LM Studio…). La IA revisa la descripción, los criterios y los mockups de cada historia y señala:
   - términos ambiguos y criterios no verificables;
   - información que falta y contradicciones;
   - casos no cubiertos y diferencias con los mockups;
@@ -48,7 +48,7 @@ Aplicación independiente del cronograma para escribir historias de usuario y su
     - No inventa datos del negocio: lo que falta queda marcado como **[POR DEFINIR: …]**.
     - Muestra el antes y el después, y solo cambia la historia si pulsas **Aplicar cambios**.
 
-  Lo resuelto queda marcado con ✓ y deja de contar como pendiente. Los criterios sugeridos se agregan uno a uno o con **"Agregar todos"**. También incluye preguntas para el negocio. Antes de subir a Azure DevOps, la aplicación avisa si quedan ambigüedades importantes o historias sin revisar. Sin clave, *"Copiar para claude.ai"* copia las instrucciones y las historias para revisarlas en una conversación de claude.ai.
+  Lo resuelto queda marcado con ✓ y deja de contar como pendiente. Los criterios sugeridos se agregan uno a uno o con **"Agregar todos"**. También incluye preguntas para el negocio. Antes de subir a Azure DevOps, la aplicación avisa si quedan ambigüedades importantes o historias sin revisar. Sin conectar una IA, *"Copiar para cualquier chat"* copia las instrucciones y las historias para pegarlas en ChatGPT, Gemini, Copilot, Claude u otro chat.
 - **Criterios de aceptación:** una frase por criterio, numerada CA-01, CA-02…, que dice qué se espera de la funcionalidad. Por ejemplo: *"Como usuario, debo poder acceder al portal con mi usuario y contraseña."* Los criterios escritos en formatos anteriores se convierten solos a una frase.
 - **Validación:** avisa si un criterio está incompleto.
 - **Herramientas:** buscador, duplicar, descarga en Excel (una fila por criterio) y respaldo `.json`.
@@ -71,11 +71,24 @@ Aplicación independiente del cronograma para escribir historias de usuario y su
 
 ### Conectar la IA
 
-1. En **console.anthropic.com → API keys** crea una clave. Conviene fijar un límite de gasto.
-2. En la aplicación pulsa **Conectar IA**, pega la clave, pulsa **Probar clave** y luego **Guardar clave**.
-3. Pulsa **"Revisar ambigüedades con IA"** para revisar las historias pendientes, o **"Revisar con IA"** en una historia.
+1. Pulsa **Conectar IA** y elige el **proveedor**:
 
-La clave solo se envía a Anthropic y, como el token de Azure, por defecto se olvida al cerrar la pestaña. Cada revisión tiene un costo según el largo de las historias y sus imágenes.
+   | Proveedor | Qué necesitas | Dónde se obtiene la clave |
+   |---|---|---|
+   | Claude (Anthropic) | Clave de API (usa Claude Opus 5.5) | console.anthropic.com → API keys |
+   | OpenAI (ChatGPT) | Clave de API y modelo | platform.openai.com → API keys |
+   | Google Gemini | Clave de API y modelo | aistudio.google.com → Get API key |
+   | Azure OpenAI | Endpoint del recurso, nombre del deployment, versión de la API y clave | Portal de Azure → tu recurso → Claves y punto de conexión |
+   | Compatible con OpenAI | URL base de la API, modelo y clave (opcional si es local) | La del proveedor (Groq, Mistral, DeepSeek, OpenRouter…) |
+
+2. Con **Cargar modelos** eliges el modelo de una lista (OpenAI, Gemini y compatibles).
+3. Pulsa **Probar conexión** y luego **Guardar**.
+4. Pulsa **"Revisar ambigüedades con IA"** para revisar las historias pendientes, o **"Revisar con IA"** en una historia.
+
+Más detalles:
+- Si tu modelo no acepta imágenes, desmarca *"Enviar los mockups a la IA"*.
+- La clave solo se envía al proveedor elegido y, como el token de Azure, por defecto se olvida al cerrar la pestaña. Cada revisión o corrección tiene un costo según el proveedor y el largo de las historias.
+- Con Ollama o LM Studio en tu computadora, el servidor debe permitir conexiones desde la página (CORS).
 
 El token de Azure DevOps solo se envía a Azure DevOps. Por defecto se olvida al cerrar la pestaña. Si marcas *"Recordar el token"*, queda guardado en ese navegador; hazlo solo en una computadora de uso personal.
 
