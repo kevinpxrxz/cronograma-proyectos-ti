@@ -22,7 +22,6 @@ Es un único archivo (`index.html`). No necesita servidor ni base de datos.
   - estado de las tareas por proyecto;
   - carga por responsable;
   - lista de tareas atrasadas.
-- **Respaldo:** exporta e importa todos tus cronogramas en un archivo `.json`.
 - **Modo oscuro.**
 
 ## Historias de usuario (aplicación aparte: `historias.html`)
@@ -98,9 +97,9 @@ El token de Azure DevOps solo se envía a Azure DevOps. Por defecto se olvida al
 
 En el **almacenamiento del navegador** (`localStorage`) de cada persona:
 
-- Cada persona ve **solo sus propios** cronogramas.
+- Cada persona ve **solo sus propios** cronogramas e historias.
 - Si borras los datos del navegador, o usas otra computadora u otro navegador, no los verás.
-- **Usa "Exportar respaldo"** de vez en cuando. Para pasar los cronogramas a otra computadora o a otra persona, ella usa **"Importar respaldo"** con ese archivo.
+- Las historias de usuario tienen **Exportar / Importar respaldo** para pasarlas a otra computadora o a otra persona. El cronograma no tiene respaldo; su información se puede descargar en **Excel**.
 
 ## Publicar en GitHub Pages
 

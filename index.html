@@ -398,9 +398,6 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
     </div>
     <div class="proj-actions">
       <button class="btn" id="proj-new" type="button">+ Nuevo cronograma</button>
-      <button class="btn" id="bk-export" type="button" title="Descarga un archivo con todos tus cronogramas">Exportar respaldo</button>
-      <button class="btn" id="bk-import" type="button" title="Carga cronogramas desde un archivo de respaldo">Importar respaldo</button>
-      <input type="file" id="bk-file" accept=".json,application/json" hidden>
       <button class="btn danger" id="proj-del" type="button">Eliminar este cronograma</button>
       <label class="theme-switch" for="dark-toggle">
         <input type="checkbox" id="dark-toggle" role="switch">
@@ -1752,31 +1749,6 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
     };
   }
 
-  // ---------- respaldo (exportar / importar) ----------
-  function exportBackup() {
-    const data = { app: 'cronograma-proyectos-ti', version: 1, exportado: new Date().toISOString(), datos: db.exportAll() };
-    const n = state.proyectos.length;
-    downloads.save({ filename: `respaldo-cronogramas-${todayISO()}.json`, data: new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }) });
-    toast(`Respaldo descargado (${n === 1 ? '1 cronograma' : n + ' cronogramas'}).`);
-  }
-  function importBackup(file) {
-    const rd = new FileReader();
-    rd.onload = () => {
-      let obj;
-      try { obj = JSON.parse(rd.result); } catch (e) { toast('El archivo no es un respaldo válido.'); return; }
-      const datos = obj && obj.datos;
-      const okPaths = datos && typeof datos === 'object' && Object.keys(datos).every(k => /^proyectos\/[^/]+(\/(tareas|historial)\/[^/]+)?$/.test(k));
-      if (!okPaths || obj.app !== 'cronograma-proyectos-ti') { toast('El archivo no es un respaldo de este cronograma.'); return; }
-      const n = Object.keys(datos).filter(k => k.split('/').length === 2).length;
-      db.importAll(datos);
-      toast(`Respaldo importado: ${n === 1 ? '1 cronograma' : n + ' cronogramas'}. Los que tenían el mismo origen se actualizaron.`);
-    };
-    rd.onerror = () => toast('No se pudo leer el archivo.');
-    rd.readAsText(file);
-  }
-  $('#bk-export').addEventListener('click', exportBackup);
-  $('#bk-import').addEventListener('click', () => $('#bk-file').click());
-  $('#bk-file').addEventListener('change', ev => { const f = ev.target.files && ev.target.files[0]; if (f) importBackup(f); ev.target.value = ''; });
 
   // ---------- inicio ----------
   render();
