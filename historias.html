@@ -138,6 +138,18 @@ mark { background: color-mix(in srgb, var(--warn) 30%, transparent); color: inhe
 .sug-list li { display: flex; gap: 10px; align-items: flex-start; padding: 7px 10px; border-radius: 6px; background: var(--surface); }
 .sug-list li p { margin: 0; flex: 1; }
 .sug-list li .btn { padding: 3px 9px; font-size: 12px; flex: none; }
+.fix-paso { display: grid; gap: 14px; }
+.fix-out { display: grid; gap: 14px; max-height: 60vh; overflow: auto; padding-right: 4px; }
+.fix-sec { display: grid; gap: 6px; }
+.fix-sec p { margin: 0; }
+.fix-desc { white-space: pre-line; padding: 10px 12px; border-radius: 6px; background: var(--surface-2); }
+.fix-old { color: var(--muted); text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--muted) 50%, transparent); }
+details .fix-old { text-decoration: none; margin-top: 6px; }
+details summary { cursor: pointer; color: var(--accent); font-size: 13px; }
+.tag-new { display: inline-block; margin-left: 6px; font-size: 11px; font-weight: 600; color: var(--ok); border: 1px solid currentColor; border-radius: 999px; padding: 0 7px; vertical-align: 1px; }
+mark.pd { background: color-mix(in srgb, var(--bad) 18%, transparent); color: var(--bad); font-weight: 600; padding: 0 2px; }
+.fix-cambios li::before { content: "✓"; color: var(--ok); }
+.fix-pd { padding: 10px 12px; border-radius: 6px; border: 1px solid color-mix(in srgb, var(--warn) 45%, var(--line)); }
 .prop { display: grid; gap: 6px; padding: 8px 10px; border-radius: 6px; background: var(--surface-2); }
 .prop p { margin: 0; }
 .prop-btns { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -356,6 +368,32 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
       </div>
     </div>
   </form>
+</dialog>
+<dialog id="fix-dialog" aria-labelledby="fix-title">
+  <div class="ed">
+    <div class="ed-top"><h3 id="fix-title">Corregir con IA</h3></div>
+    <div id="fix-paso1" class="fix-paso">
+      <p class="note" id="fix-intro"></p>
+      <div class="field"><label for="fix-notas">Respuestas o indicaciones para la IA (opcional)</label>
+        <textarea id="fix-notas" rows="7" placeholder="Ej.: El bloqueo dura 15 minutos. El mensaje de error es «Usuario o contraseña incorrectos». Solo pueden entrar colaboradores activos."></textarea>
+        <span class="hint">Si la IA dejó preguntas, aparecen aquí: escribe la respuesta después de cada flecha. Lo que no respondas quedará como [POR DEFINIR].</span></div>
+      <label class="check" id="fix-sug-wrap"><input type="checkbox" id="fix-sug"> Incluir los <span id="fix-sug-n"></span> criterios sugeridos por la revisión</label>
+      <p class="status" id="fix-status" hidden></p>
+      <div class="ed-foot"><div class="right">
+        <button class="btn" type="button" id="fix-cancel">Cancelar</button>
+        <button class="btn ia-btn solid" type="button" id="fix-gen">Generar corrección</button>
+      </div></div>
+    </div>
+    <div id="fix-paso2" class="fix-paso" hidden>
+      <p class="note">Revisa la propuesta. Si la aplicas, se reemplazan la descripción y los criterios de la historia. Si ya estaba en Azure DevOps, quedará como «tiene cambios sin subir».</p>
+      <div id="fix-out" class="fix-out"></div>
+      <div class="ed-foot"><div class="right">
+        <button class="btn" type="button" id="fix-back">Volver</button>
+        <button class="btn" type="button" id="fix-discard">Descartar</button>
+        <button class="btn primary" type="button" id="fix-apply">Aplicar cambios</button>
+      </div></div>
+    </div>
+  </div>
 </dialog>
 <div class="toast" id="toast" role="status" hidden></div>
 
@@ -1124,17 +1162,21 @@ Cómo responder:
     return res;
   }
   async function revisarLote(lote) {
+    return pedirJSON(SISTEMA, await contenidoLote(lote), ESQUEMA, 32000, 'revisar estas historias');
+  }
+  // llamada a Claude que devuelve JSON con el esquema indicado
+  async function pedirJSON(sistema, content, esquema, maxTokens, tarea) {
     const { Anthropic, client } = await cliente();
     let msg;
     try {
       const stream = client.beta.messages.stream({
         model: IA_MODELO,
-        max_tokens: 32000,
+        max_tokens: maxTokens,
         betas: ['server-side-fallback-2026-07-01'],
         fallbacks: 'default', // si el modelo declina, la API reintenta con otro modelo adecuado
-        output_config: { effort: 'high', format: { type: 'json_schema', schema: ESQUEMA } },
-        system: SISTEMA,
-        messages: [{ role: 'user', content: await contenidoLote(lote) }]
+        output_config: { effort: 'high', format: { type: 'json_schema', schema: esquema } },
+        system: sistema,
+        messages: [{ role: 'user', content }]
       });
       msg = await stream.finalMessage();
     } catch (e) {
@@ -1146,11 +1188,137 @@ Cómo responder:
       if (e instanceof Anthropic.APIError) throw new Error(`La API de Claude respondió con un error (${e.status}). Inténtalo de nuevo.`);
       throw new Error('No se pudo cargar la librería de Claude. Revisa tu conexión a internet.');
     }
-    if (msg.stop_reason === 'refusal') throw new Error('La IA no pudo revisar estas historias.');
-    if (msg.stop_reason === 'max_tokens') throw new Error('La revisión quedó incompleta porque las historias son muy largas. Revisa menos historias a la vez.');
+    if (msg.stop_reason === 'refusal') throw new Error(`La IA no pudo ${tarea}.`);
+    if (msg.stop_reason === 'max_tokens') throw new Error('La respuesta quedó incompleta porque el texto es muy largo. Inténtalo con menos historias a la vez.');
     const txt = msg.content.filter(b => b.type === 'text').map(b => b.text).join('');
     try { return JSON.parse(txt); } catch (e) { throw new Error('La IA devolvió una respuesta que no se pudo leer. Inténtalo de nuevo.'); }
   }
+
+  // ---------- corrección automática con IA ----------
+  // La IA reescribe la historia para resolver las ambigüedades. No inventa datos del negocio:
+  // lo que falta queda como [POR DEFINIR: …]. El usuario ve el antes y el después y decide.
+  const SISTEMA_FIX = `Eres un analista de negocio senior. Corriges historias de usuario escritas en español para eliminar sus ambigüedades, manteniendo la intención original y el estilo del equipo.
+
+Reglas:
+- Conserva todo lo que ya está claro. No cambies el alcance ni agregues funcionalidades que la historia no pide.
+- Resuelve cada ambigüedad de la lista que se pueda resolver con la información de la historia, sus mockups y las indicaciones del usuario.
+- No inventes datos del negocio (tiempos, cantidades, montos, roles, reglas, textos de mensajes). Si falta un dato, escribe en su lugar [POR DEFINIR: qué falta] y agrégalo a «por_definir».
+- Las indicaciones del usuario son la fuente de verdad para esos datos: úsalas tal cual.
+- La descripción mantiene la estructura que tenga (Como… quiero… para…, contexto, detalle de la funcionalidad, reglas de negocio, fuera de alcance, notas). Puedes completar las secciones que falten o estén vagas.
+- Cada criterio de aceptación es una sola frase que dice qué se espera de la funcionalidad, verificable con una prueba. Por ejemplo: «Como usuario, debo poder acceder al portal con mi usuario y contraseña.».
+- Devuelve en «criterios» la lista final completa y en orden: los que quedan igual, los corregidos y los nuevos, sin códigos CA.
+- En «resueltos» pon los números de las ambigüedades de la lista que quedaron resueltas con tu corrección.
+- En «cambios» explica en frases cortas qué cambiaste y por qué.
+- Si el título es ambiguo, corrígelo; si no, devuélvelo igual.`;
+  const ESQUEMA_FIX = {
+    type: 'object', additionalProperties: false, required: ['titulo', 'descripcion', 'criterios', 'resueltos', 'cambios', 'por_definir'],
+    properties: {
+      titulo: { type: 'string' }, descripcion: { type: 'string' },
+      criterios: { type: 'array', items: { type: 'string' } },
+      resueltos: { type: 'array', items: { type: 'integer' } },
+      cambios: { type: 'array', items: { type: 'string' } },
+      por_definir: { type: 'array', items: { type: 'string' } }
+    }
+  };
+  const pendientesIA = h => (h.revision ? h.revision.hallazgos || [] : []).map((x, i) => ({ x, i })).filter(({ x }) => !x.descartado && !x.aplicado);
+  const fixDlg = $('#fix-dialog');
+  let fix = null; // { h, lista, incluirSug, resultado }
+  function abrirFix(h) {
+    if (!iaListo()) { abrirIa(); return; }
+    const lista = pendientesIA(h);
+    const sug = h.revision ? h.revision.sugeridos || [] : [];
+    fix = { hid: h.id, lista, resultado: null };
+    $('#fix-title').textContent = `Corregir ${codigo(h)} con IA`;
+    $('#fix-intro').textContent = `La IA reescribirá la descripción y los criterios para resolver ${plural(lista.length, 'ambigüedad pendiente', 'ambigüedades pendientes')}. No inventa datos del negocio: lo que falte lo marca como [POR DEFINIR] para que lo completes. Antes de aplicar verás el antes y el después.`;
+    const preguntas = h.revision ? h.revision.preguntas || [] : [];
+    $('#fix-notas').value = preguntas.length ? preguntas.map(p => `${p}\n→ `).join('\n\n') : '';
+    $('#fix-sug').checked = true;
+    $('#fix-sug-wrap').hidden = !sug.length;
+    $('#fix-sug-n').textContent = sug.length;
+    $('#fix-paso1').hidden = false; $('#fix-paso2').hidden = true;
+    $('#fix-status').hidden = true;
+    $('#fix-gen').disabled = false; $('#fix-gen').textContent = 'Generar corrección';
+    fixDlg.showModal();
+    $('#fix-notas').focus();
+  }
+  async function generarFix() {
+    const h = historias.find(x => x.id === fix.hid);
+    if (!h) return;
+    // se envían solo las preguntas respondidas y el texto libre
+    const notas = $('#fix-notas').value.split(/\n\s*\n/).map(b => b.trim())
+      .filter(b => b && !(b.includes('→') && /→\s*$/.test(b))).join('\n\n');
+    const sug = $('#fix-sug').checked && h.revision ? h.revision.sugeridos || [] : [];
+    const content = [{ type: 'text', text: [
+      'Historia a corregir:', textoHistoria(h), '',
+      'Ambigüedades a resolver (numeradas):',
+      ...(fix.lista.length ? fix.lista.map(({ x }, k) => `${k + 1}. [${x.severidad}] ${x.ubicacion}: ${x.problema}${x.cita ? ` (texto: «${x.cita}»)` : ''}${x.sugerencia ? ` Sugerencia: ${x.sugerencia}` : ''}`) : ['(ninguna; solo mejora la claridad sin cambiar el alcance)']),
+      '', sug.length ? 'Agrega también estos criterios sugeridos si no están cubiertos:\n' + sug.map(s => '- ' + s).join('\n') : '',
+      '', notas ? 'Indicaciones y respuestas del usuario (úsalas como datos del negocio):\n' + notas : 'El usuario no dio indicaciones adicionales.'
+    ].join('\n') }];
+    for (const [i, m] of (h.imagenes || []).entries()) {
+      const blob = await IDB.get(m.id);
+      if (!blob) continue;
+      content.push({ type: 'text', text: `Mockup ${i + 1}: ${m.nombre}` });
+      content.push({ type: 'image', source: { type: 'base64', media_type: m.tipo, data: (await blobADataUrl(blob)).split(',')[1] } });
+    }
+    const btn = $('#fix-gen');
+    btn.disabled = true; btn.textContent = 'La IA está corrigiendo…';
+    fixStatus('Esto puede tardar unos segundos.', '');
+    try {
+      const r = await pedirJSON(SISTEMA_FIX, content, ESQUEMA_FIX, 16000, 'corregir esta historia');
+      fix.resultado = r; fix.incluirSug = !!sug.length;
+      mostrarFix(h, r);
+    } catch (e) { fixStatus(e.message, 'bad'); }
+    finally { btn.disabled = false; btn.textContent = 'Generar corrección'; }
+  }
+  const fixStatus = (msg, cls) => { const el = $('#fix-status'); el.textContent = msg; el.className = 'status' + (cls ? ' ' + cls : ''); el.hidden = !msg; };
+  const marcarPorDefinir = s => esc(s).replace(/\[POR DEFINIR:[^\]]*\]/gi, m => `<mark class="pd">${m}</mark>`);
+  function mostrarFix(h, r) {
+    const antes = new Set((h.criterios || []).map(c => c.texto.trim()));
+    const despues = new Set((r.criterios || []).map(t => t.trim()));
+    const quitados = (h.criterios || []).filter(c => !despues.has(c.texto.trim()));
+    $('#fix-out').innerHTML = `
+      ${r.titulo.trim() !== h.titulo.trim() ? `<div class="fix-sec"><span class="sec-sum">Título</span><p class="fix-old">${esc(h.titulo)}</p><p>${marcarPorDefinir(r.titulo)}</p></div>` : ''}
+      <div class="fix-sec"><span class="sec-sum">Descripción corregida</span>
+        <div class="fix-desc">${marcarPorDefinir(r.descripcion)}</div>
+        <details><summary>Ver la descripción original</summary><div class="fix-desc fix-old">${esc(h.descripcion || '(sin descripción)')}</div></details></div>
+      <div class="fix-sec"><span class="sec-sum">Criterios de aceptación corregidos (${r.criterios.length})</span>
+        <ol class="ca-list">${r.criterios.map((t, i) => `<li class="ca"><span class="ca-code">${caCodigo(i)}</span><p>${marcarPorDefinir(t)}
+          ${antes.has(t.trim()) ? '' : '<span class="tag-new">nuevo o corregido</span>'}</p></li>`).join('')}</ol>
+        ${quitados.length ? `<p class="hint">Se reemplazan o quitan: ${quitados.map(c => `«${esc(c.texto)}»`).join(' · ')}</p>` : ''}</div>
+      ${(r.cambios || []).length ? `<div class="fix-sec"><span class="sec-sum">Qué cambió</span><ul class="preg-list fix-cambios">${r.cambios.map(c => `<li>${esc(c)}</li>`).join('')}</ul></div>` : ''}
+      ${(r.por_definir || []).length ? `<div class="fix-sec fix-pd"><span class="sec-sum">Por definir con el negocio (${r.por_definir.length})</span>
+        <ul class="preg-list">${r.por_definir.map(c => `<li>${esc(c)}</li>`).join('')}</ul>
+        <p class="hint">Quedaron marcados como [POR DEFINIR] en el texto. Puedes escribir las respuestas en «Volver» y generar de nuevo.</p></div>` : ''}`;
+    $('#fix-paso1').hidden = true; $('#fix-paso2').hidden = false;
+    fixStatus('');
+  }
+  function aplicarFix() {
+    const h = historias.find(x => x.id === fix.hid);
+    const r = fix && fix.resultado;
+    if (!h || !r) return;
+    const alDia = revActual(h);
+    h.titulo = r.titulo.trim() || h.titulo;
+    h.descripcion = r.descripcion.trim();
+    h.criterios = r.criterios.map(t => ({ texto: t.trim() })).filter(c => c.texto);
+    h.actualizado = hoy();
+    if (h.revision) {
+      (r.resueltos || []).forEach(n => { const p = fix.lista[n - 1]; if (p && h.revision.hallazgos[p.i]) h.revision.hallazgos[p.i].aplicado = 'Corregido con IA'; });
+      if (fix.incluirSug) h.revision.sugeridos = [];
+      h.revision.corregidaIA = true; // la nota de claridad es de antes de corregir
+      if (alDia) h.revision.firma = firma(h);
+    }
+    guardar(); render();
+    fixDlg.close();
+    const pd = (r.por_definir || []).length;
+    toast(`${codigo(h)} corregida.${pd ? ` ${pd === 1 ? 'Queda 1 dato' : `Quedan ${pd} datos`} [POR DEFINIR].` : ''} Pulsa «Volver a revisar» para confirmar que quedó clara.`, 7000);
+  }
+  $('#fix-gen').addEventListener('click', generarFix);
+  $('#fix-cancel').addEventListener('click', () => fixDlg.close());
+  $('#fix-back').addEventListener('click', () => { $('#fix-paso1').hidden = false; $('#fix-paso2').hidden = true; fixStatus(''); });
+  $('#fix-discard').addEventListener('click', () => { fixDlg.close(); toast('Corrección descartada. La historia no cambió.'); });
+  $('#fix-apply').addEventListener('click', aplicarFix);
+  fixDlg.addEventListener('close', () => { fix = null; });
   async function revisar(lista) {
     if (!iaListo()) { abrirIa(); return; }
     if (revisando || !lista.length) return;
@@ -1216,10 +1384,13 @@ Cómo responder:
     const hall = (rev.hallazgos || []).map((x, i) => ({ x, i })).sort((a, b) => (a.x.descartado - b.x.descartado) || (orden[a.x.severidad] - orden[b.x.severidad]));
     return `<div class="ia-row">
       <div class="ia-head">
-        <span class="ia-chip"><span class="k">IA</span>Claridad ${rev.claridad}/5 · ${resumen}</span>
-        ${actual ? `<span class="hint">revisada el ${fechaHora(rev.fecha)}</span>` : '<span class="ia-old">Cambiaste la historia después de revisarla</span>'}
+        <span class="ia-chip"><span class="k">IA</span>${rev.corregidaIA ? `Corregida con IA · claridad antes: ${rev.claridad}/5` : `Claridad ${rev.claridad}/5`} · ${resumen}</span>
+        ${!actual ? '<span class="ia-old">Cambiaste la historia después de revisarla</span>'
+          : rev.corregidaIA ? '<span class="hint">Vuelve a revisar para confirmar que quedó clara</span>'
+          : `<span class="hint">revisada el ${fechaHora(rev.fecha)}</span>`}
         <div class="right">
           <button class="btn" type="button" data-ia-toggle="${esc(h.id)}">${abierto ? 'Ocultar detalle' : 'Ver detalle'}</button>
+          ${vivos.length || (rev.sugeridos || []).length ? `<button class="btn ia-btn solid" type="button" data-ia-fix="${esc(h.id)}">Corregir con IA</button>` : ''}
           <button class="btn ia-btn${actual ? '' : ' solid'}" type="button" data-ia-rev="${esc(h.id)}">${actual ? 'Volver a revisar' : 'Revisar de nuevo'}</button>
         </div>
       </div>
@@ -1289,6 +1460,7 @@ Cómo responder:
     if ((b = t.closest('[data-ver]'))) { const [hid, mid] = b.dataset.ver.split('|'); return verImagen(hid, mid); }
     if ((b = t.closest('[data-az-up]'))) { const h = historias.find(x => x.id === b.dataset.azUp); if (h) subirVarias([h]); return; }
     if ((b = t.closest('[data-ia-rev]'))) { const h = historias.find(x => x.id === b.dataset.iaRev); if (h) revisar([h]); return; }
+    if ((b = t.closest('[data-ia-fix]'))) { const h = historias.find(x => x.id === b.dataset.iaFix); if (h) abrirFix(h); return; }
     if ((b = t.closest('[data-ia-toggle]'))) { const id = b.dataset.iaToggle; iaAbiertas.has(id) ? iaAbiertas.delete(id) : iaAbiertas.add(id); return render(); }
     if ((b = t.closest('[data-ia-desc]'))) {
       const [hid, i] = b.dataset.iaDesc.split('|');
