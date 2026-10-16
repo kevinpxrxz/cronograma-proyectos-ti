@@ -25,6 +25,32 @@ Es un único archivo (`index.html`). No necesita servidor ni base de datos.
 - **Respaldo:** exporta e importa todos tus cronogramas en un archivo `.json`.
 - **Modo oscuro.**
 
+## Historias de usuario (aplicación aparte: `historias.html`)
+
+Aplicación independiente del cronograma para escribir historias de usuario y subirlas al tablero de **Azure DevOps**. Se abre en `https://<tu-usuario>.github.io/<repositorio>/historias.html`.
+
+- **Historias:** código automático (HU-001, HU-002…), título, descripción y criterios de aceptación **Dado / Cuando / Entonces**.
+- **Validación:** avisa si un criterio está incompleto.
+- **Herramientas:** buscador, duplicar, descarga en Excel (una fila por criterio) y respaldo `.json`.
+- **Azure DevOps:** cada historia se crea como *User Story*, *Product Backlog Item* o *Issue* (según el proceso del proyecto), con:
+  - título, descripción y criterios de aceptación;
+  - la etiqueta `HU-xxx`;
+  - opcionalmente, ruta de área e iteración.
+- **Sin criterios antiguos:** si editas una historia ya subida, aparece como *"tiene cambios sin subir"*. Al volver a subirla se **actualiza el mismo elemento de trabajo** y su título, descripción y criterios se **reemplazan por completo**. Las etiquetas, el estado, el responsable y los comentarios que tenga en Azure no se tocan.
+- **Si borraron el elemento en Azure,** al volver a subir la historia se crea de nuevo.
+
+### Conectar con Azure DevOps
+
+1. En Azure DevOps abre **User settings → Personal access tokens → New Token**. Dale el permiso **Work Items: Read & write**.
+2. En la aplicación pulsa **Conectar Azure DevOps** y completa:
+   - la organización, por ejemplo `miempresa` o `https://dev.azure.com/miempresa`;
+   - el proyecto;
+   - el tipo de elemento de trabajo;
+   - el token.
+3. Pulsa **Probar conexión** y luego **Guardar conexión**.
+
+El token solo se envía a Azure DevOps. Por defecto se olvida al cerrar la pestaña. Si marcas *"Recordar el token"*, queda guardado en ese navegador; hazlo solo en una computadora de uso personal.
+
 ## Dónde se guardan los datos
 
 En el **almacenamiento del navegador** (`localStorage`) de cada persona:

@@ -1,0 +1,736 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Diseño de historias de usuario con criterios de aceptación Dado / Cuando / Entonces y exportación a Excel.">
+<title>Historias de Usuario</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* reset base */
+:root { color-scheme: light; }
+html, body { margin: 0; }
+[hidden] { display: none !important; }
+
+/* Layout: cabecera con acciones → buscador → lista de tarjetas de historias */
+:root {
+  --bg: #f2f4f7; --surface: #ffffff; --surface-2: #eceff4; --fg: #131a23; --muted: #5a6675;
+  --line: #d9dfe7; --accent: #2453c9; --accent-soft: #dfe7fb; --on-accent: #ffffff;
+  --ok: #1d8a5a; --warn: #a96500; --bad: #c23b33; --k-dado: #12867a; --k-cuando: #6a4fc2;
+  --f-display: "Archivo", "Segoe UI", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --radius: 8px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0e131a; --surface: #161d26; --surface-2: #1d2631; --fg: #e6ebf1; --muted: #97a3b2;
+  --line: #2a3441; --accent: #7d9cf4; --accent-soft: #233355; --on-accent: #0e131a;
+  --ok: #4cc28a; --warn: #e0a43a; --bad: #f0736a; --k-dado: #3fc1b2; --k-cuando: #a28cf0;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0e131a; --surface: #161d26; --surface-2: #1d2631; --fg: #e6ebf1; --muted: #97a3b2;
+  --line: #2a3441; --accent: #7d9cf4; --accent-soft: #233355; --on-accent: #0e131a;
+  --ok: #4cc28a; --warn: #e0a43a; --bad: #f0736a; --k-dado: #3fc1b2; --k-cuando: #a28cf0;
+  color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--f-body); font-size: 14px; line-height: 1.45; }
+.wrap { max-width: 1100px; margin: 0 auto; padding-inline: 20px; padding-block: 24px 48px; display: grid; gap: 16px; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.top { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: flex-end; justify-content: space-between; }
+.top-text { display: grid; gap: 4px; min-width: 0; }
+.eyebrow { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+h1 { margin: 0; font-family: var(--f-display); font-size: clamp(24px, 3.4vw, 34px); font-weight: 700; letter-spacing: -.01em; }
+.sub { color: var(--muted); }
+.actions { display: flex; gap: 8px 12px; flex-wrap: wrap; align-items: center; }
+.btn { border: 1px solid var(--line); background: var(--surface); padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 500; }
+.btn:hover { border-color: var(--muted); }
+.btn:disabled { opacity: .55; cursor: not-allowed; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.danger { color: var(--bad); }
+.btn.danger.armed { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+.xls-ico { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 3px; background: #1d7a46; color: #fff;
+  font-size: 11px; font-weight: 700; margin-right: 7px; vertical-align: -3px; }
+.theme-switch { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 500; user-select: none; position: relative; }
+.theme-switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.sw-track { width: 40px; height: 22px; border-radius: 11px; background: var(--line); position: relative; transition: background .2s; flex: none; }
+.sw-thumb { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--surface); box-shadow: 0 1px 2px rgb(0 0 0 / .25); transition: transform .2s; }
+.theme-switch input:checked + .sw-track { background: var(--accent); }
+.theme-switch input:checked + .sw-track .sw-thumb { transform: translateX(18px); }
+.theme-switch input:focus-visible + .sw-track { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.tools { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
+.search { display: flex; align-items: center; gap: 8px; flex: 1 1 320px; max-width: 560px; border: 1px solid var(--line); border-radius: 6px;
+  background: var(--surface); padding: 0 10px; color: var(--muted); }
+.search:focus-within { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.search input { flex: 1; min-width: 0; border: 0; background: transparent; padding: 9px 0; outline: none; }
+.hint { color: var(--muted); font-size: 12.5px; }
+.note { color: var(--muted); font-size: 12.5px; margin: 0; }
+
+.list { display: grid; gap: 12px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); display: grid; gap: 10px; padding: 14px 16px; }
+.card-top { display: flex; gap: 10px 14px; align-items: baseline; flex-wrap: wrap; }
+.code { font-family: var(--f-mono); font-size: 12px; font-weight: 500; color: var(--accent); background: var(--accent-soft); padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+.title { margin: 0; font-family: var(--f-display); font-size: 17px; font-weight: 600; flex: 1 1 260px; min-width: 0; text-wrap: balance; }
+.card-actions { display: flex; gap: 6px; margin-left: auto; }
+.card-actions .btn { padding: 5px 10px; font-size: 13px; }
+.desc { margin: 0; white-space: pre-line; max-width: 80ch; }
+.desc.vacia { color: var(--muted); font-style: italic; }
+.crit { display: grid; gap: 6px; }
+.crit-sum { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
+.gwt { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 4px 10px; padding: 10px 12px; border-radius: 6px; background: var(--surface-2); }
+.gwt-n { font-family: var(--f-mono); font-size: 12px; color: var(--muted); grid-row: span 3; padding-top: 1px; }
+.gwt p { margin: 0; white-space: pre-line; }
+.gwt b { display: inline-block; min-width: 70px; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; }
+.k-dado { color: var(--k-dado); } .k-cuando { color: var(--k-cuando); } .k-entonces { color: var(--ok); }
+.empty { background: var(--surface); border: 1px dashed var(--line); border-radius: var(--radius); padding: 36px 20px; text-align: center; color: var(--muted); display: grid; gap: 10px; justify-items: center; }
+mark { background: color-mix(in srgb, var(--warn) 30%, transparent); color: inherit; border-radius: 2px; }
+
+dialog { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--fg); padding: 0; width: min(720px, calc(100vw - 32px)); }
+dialog::backdrop { background: rgb(10 14 20 / .45); }
+.ed { display: grid; gap: 14px; padding: 20px; }
+.ed-top { display: flex; gap: 12px; align-items: center; }
+.ed-top h3 { margin: 0; font-family: var(--f-display); font-size: 19px; }
+.field { display: grid; gap: 5px; min-width: 0; }
+.field label { font-size: 12px; font-weight: 600; color: var(--muted); }
+.field input, .field textarea, .crit-row textarea { width: 100%; min-width: 0; border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; background: var(--surface); resize: vertical; }
+.field input:focus, .field textarea:focus, .crit-row textarea:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 2px var(--accent-soft); }
+.crit-head { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
+.crit-head h4 { margin: 0; font-size: 14px; }
+.crit-list { display: grid; gap: 10px; }
+.crit-ed { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); }
+.crit-ed-top { display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 600; color: var(--muted); }
+.crit-ed-top button { border: 0; background: none; color: var(--bad); cursor: pointer; font-size: 12.5px; padding: 2px 4px; }
+.crit-row { display: grid; grid-template-columns: 82px minmax(0, 1fr); gap: 8px; align-items: start; }
+.crit-row label { font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding-top: 8px; }
+.crit-row textarea { min-height: 38px; padding: 7px 9px; }
+.err { color: var(--bad); margin: 0; font-size: 13px; }
+.ed-foot { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.ed-foot .right { display: flex; gap: 8px; margin-left: auto; }
+.toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--fg); color: var(--bg);
+  padding: 10px 16px; border-radius: 6px; z-index: 50; max-width: calc(100vw - 32px); font-size: 13.5px; }
+/* Azure DevOps */
+.az-btn { display: inline-flex; align-items: center; gap: 8px; }
+.az-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--line); flex: none; }
+.az-dot.on { background: var(--ok); }
+.az-sync { margin-left: auto; }
+.grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+.grid2 .full { grid-column: 1 / -1; }
+.field select { width: 100%; border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; background: var(--surface); }
+.field select:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 2px var(--accent-soft); }
+.check { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; }
+.check input { accent-color: var(--accent); width: 16px; height: 16px; margin-top: 1px; flex: none; }
+.az-status { margin: 0; padding: 9px 12px; border-radius: 6px; font-size: 13px; background: var(--surface-2); }
+.az-status.ok { color: var(--ok); background: color-mix(in srgb, var(--ok) 10%, var(--surface)); }
+.az-status.bad { color: var(--bad); background: color-mix(in srgb, var(--bad) 9%, var(--surface)); }
+.az-row { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; padding-top: 8px; border-top: 1px solid var(--line); font-size: 13px; }
+.az-chip { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 12.5px; }
+.az-chip::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.az-chip.nueva { color: var(--muted); } .az-chip.al-dia { color: var(--ok); } .az-chip.cambios { color: var(--warn); }
+.az-row a { color: var(--accent); }
+.az-row .btn { padding: 5px 10px; font-size: 13px; margin-left: auto; }
+@media (max-width: 560px) { .grid2 { grid-template-columns: minmax(0, 1fr); } .az-sync { margin-left: 0; } }
+@media (max-width: 640px) { .wrap { padding-inline: 16px; } }
+@media (max-width: 520px) { .crit-row { grid-template-columns: minmax(0, 1fr); gap: 2px; } .crit-row label { padding-top: 0; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="top-text">
+      <span class="eyebrow">Diseño de historias de usuario</span>
+      <h1>Historias de usuario</h1>
+      <span class="sub" id="sub">Cargando…</span>
+    </div>
+    <div class="actions">
+      <label class="theme-switch" for="dark-toggle">
+        <input type="checkbox" id="dark-toggle" role="switch">
+        <span class="sw-track" aria-hidden="true"><span class="sw-thumb"></span></span>
+        <span>Modo oscuro</span>
+      </label>
+      <button class="btn az-btn" id="az-open" type="button"><span class="az-dot" id="az-dot" aria-hidden="true"></span><span id="az-label">Conectar Azure DevOps</span></button>
+      <button class="btn" id="bk-export" type="button" title="Descarga un archivo con todas tus historias">Exportar respaldo</button>
+      <button class="btn" id="bk-import" type="button" title="Carga historias desde un archivo de respaldo">Importar respaldo</button>
+      <input type="file" id="bk-file" accept=".json,application/json" hidden>
+      <button class="btn" id="xls" type="button"><span class="xls-ico" aria-hidden="true">X</span>Descargar Excel</button>
+      <button class="btn primary" id="new" type="button">+ Nueva historia</button>
+    </div>
+  </header>
+
+  <div class="tools">
+    <label class="search" for="q"><span aria-hidden="true">⌕</span>
+      <input id="q" type="search" placeholder="Buscar por código, título, descripción o criterio…" autocomplete="off"></label>
+    <span class="hint" id="count"></span>
+    <button class="btn az-sync" id="az-sync-all" type="button" hidden></button>
+  </div>
+
+  <div class="list" id="list"><div class="empty">Cargando historias…</div></div>
+
+  <p class="note">Las historias se guardan en este navegador. Usa <b>Exportar respaldo</b> para pasarlas a otra computadora o compartirlas.</p>
+</div>
+
+<dialog id="editor" aria-labelledby="ed-title">
+  <form class="ed" id="form" novalidate>
+    <div class="ed-top"><h3 id="ed-title">Nueva historia</h3><span class="code" id="ed-code"></span></div>
+    <div class="field"><label for="titulo">Título de la historia</label>
+      <input id="titulo" type="text" maxlength="160" placeholder="Ej.: Recuperar contraseña por correo"></div>
+    <div class="field"><label for="desc">Descripción</label>
+      <textarea id="desc" rows="4" maxlength="4000" placeholder="Ej.: Como cliente quiero recuperar mi contraseña desde el correo para volver a entrar sin llamar a soporte."></textarea></div>
+    <div class="crit-head">
+      <h4>Criterios de aceptación</h4>
+      <span class="hint">Cada criterio describe una situación y el resultado esperado.</span>
+    </div>
+    <div class="crit-list" id="crit-list"></div>
+    <button class="btn" type="button" id="add-crit">+ Agregar criterio</button>
+    <p class="err" id="err" hidden></p>
+    <div class="ed-foot">
+      <button class="btn danger" type="button" id="del">Eliminar</button>
+      <div class="right">
+        <button class="btn" type="button" id="cancel">Cancelar</button>
+        <button class="btn primary" type="submit">Guardar historia</button>
+      </div>
+    </div>
+  </form>
+</dialog>
+<dialog id="az-dialog" aria-labelledby="az-title">
+  <form class="ed" id="az-form" novalidate>
+    <div class="ed-top"><h3 id="az-title">Conexión con Azure DevOps</h3></div>
+    <p class="note">Cada historia se crea como un elemento de trabajo en el tablero de tu proyecto. Si cambias una historia y la vuelves a subir, se actualiza el <b>mismo</b> elemento y sus criterios de aceptación se reemplazan por completo, así no quedan criterios antiguos.</p>
+    <div class="grid2">
+      <div class="field"><label for="az-org">Organización</label><input id="az-org" type="text" autocomplete="off" placeholder="miempresa o https://dev.azure.com/miempresa"></div>
+      <div class="field"><label for="az-proj">Proyecto</label><input id="az-proj" type="text" autocomplete="off" placeholder="Nombre del proyecto en Azure DevOps"></div>
+      <div class="field"><label for="az-type">Tipo de elemento de trabajo</label>
+        <select id="az-type">
+          <option value="User Story">User Story (proceso Agile)</option>
+          <option value="Product Backlog Item">Product Backlog Item (proceso Scrum)</option>
+          <option value="Issue">Issue (proceso Basic)</option>
+        </select></div>
+      <div class="field"><label for="az-area">Ruta de área (opcional)</label><input id="az-area" type="text" autocomplete="off" placeholder="Proyecto\Equipo"></div>
+      <div class="field full"><label for="az-iter">Iteración o sprint (opcional)</label><input id="az-iter" type="text" autocomplete="off" placeholder="Proyecto\Sprint 1"></div>
+      <div class="field full"><label for="az-pat">Token de acceso personal (PAT)</label>
+        <input id="az-pat" type="password" autocomplete="off" spellcheck="false" placeholder="Pega aquí tu token de Azure DevOps">
+        <span class="hint">Créalo en Azure DevOps → <b>User settings</b> → <b>Personal access tokens</b>, con el permiso <b>Work Items: Read &amp; write</b>. Solo se envía a Azure DevOps.</span></div>
+      <label class="check full"><input type="checkbox" id="az-remember"> Recordar el token en este navegador. Si no lo marcas, se olvida al cerrar la pestaña.</label>
+    </div>
+    <p class="az-status" id="az-status" hidden></p>
+    <div class="ed-foot">
+      <button class="btn danger" type="button" id="az-forget">Olvidar token</button>
+      <div class="right">
+        <button class="btn" type="button" id="az-cancel">Cerrar</button>
+        <button class="btn" type="button" id="az-test">Probar conexión</button>
+        <button class="btn primary" type="submit">Guardar conexión</button>
+      </div>
+    </div>
+  </form>
+</dialog>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const KEY = 'historias-usuario:v1';
+  const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const hoy = () => { const n = new Date(); return n.getFullYear() + '-' + String(n.getMonth() + 1).padStart(2, '0') + '-' + String(n.getDate()).padStart(2, '0'); };
+  const fechaLarga = () => { const n = new Date(); return n.getDate() + ' ' + MESES[n.getMonth()] + ' ' + n.getFullYear(); };
+  const codigo = h => 'HU-' + String(h.numero || 0).padStart(3, '0');
+  const genId = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-6);
+
+  // ---------- datos (localStorage de este navegador) ----------
+  let historias = [];
+  let ultimoNumero = 0; // nunca se reutiliza un código, aunque se borre la historia
+  function cargar() {
+    try {
+      const d = JSON.parse(localStorage.getItem(KEY) || '{}');
+      historias = Array.isArray(d.historias) ? d.historias : [];
+      ultimoNumero = Math.max(d.ultimoNumero || 0, ...historias.map(h => h.numero || 0), 0);
+    } catch (e) { historias = []; }
+  }
+  function guardar() {
+    try { localStorage.setItem(KEY, JSON.stringify({ version: 1, ultimoNumero, historias })); return true; }
+    catch (e) { toast('No se pudo guardar: el navegador no tiene espacio o bloquea el almacenamiento.'); return false; }
+  }
+  window.addEventListener('storage', ev => { if (ev.key === KEY) { cargar(); render(); } });
+
+  // ---------- lista ----------
+  const q = () => ($('#q').value || '').trim().toLowerCase();
+  const resaltar = (txt, s) => {
+    txt = String(txt ?? '');
+    if (!s) return esc(txt);
+    const i = txt.toLowerCase().indexOf(s);
+    if (i < 0) return esc(txt);
+    return esc(txt.slice(0, i)) + '<mark>' + esc(txt.slice(i, i + s.length)) + '</mark>' + esc(txt.slice(i + s.length));
+  };
+  function render() {
+    const todas = historias.slice().sort((a, b) => (a.numero || 0) - (b.numero || 0));
+    const nCrit = todas.reduce((a, h) => a + (h.criterios || []).length, 0);
+    $('#sub').textContent = `${todas.length === 1 ? '1 historia' : todas.length + ' historias'} · ${nCrit === 1 ? '1 criterio de aceptación' : nCrit + ' criterios de aceptación'}`;
+    $('#xls').disabled = !todas.length;
+    const s = q();
+    const lista = s ? todas.filter(h => [codigo(h), h.titulo, h.descripcion, ...(h.criterios || []).flatMap(c => [c.dado, c.cuando, c.entonces])]
+      .some(x => String(x || '').toLowerCase().includes(s))) : todas;
+    $('#count').textContent = s ? `${lista.length} de ${todas.length} coinciden con «${$('#q').value.trim()}»` : '';
+    const el = $('#list');
+    if (!todas.length) {
+      el.innerHTML = `<div class="empty"><strong>Aún no hay historias de usuario.</strong>
+        <span>Cada historia tiene un título, una descripción y sus criterios de aceptación en formato Dado / Cuando / Entonces.</span>
+        <button class="btn primary" type="button" data-new>+ Escribir la primera historia</button></div>`;
+      return;
+    }
+    if (!lista.length) { el.innerHTML = '<div class="empty">Ninguna historia coincide con la búsqueda.</div>'; return; }
+    el.innerHTML = lista.map(h => {
+      const cs = h.criterios || [];
+      return `<article class="card">
+        <div class="card-top">
+          <span class="code">${resaltar(codigo(h), s)}</span>
+          <h2 class="title">${resaltar(h.titulo || 'Sin título', s)}</h2>
+          <div class="card-actions">
+            <button class="btn" type="button" data-edit="${esc(h.id)}">Editar</button>
+            <button class="btn" type="button" data-dup="${esc(h.id)}" title="Crear una copia para usarla de base">Duplicar</button>
+          </div>
+        </div>
+        ${h.descripcion ? `<p class="desc">${resaltar(h.descripcion, s)}</p>` : '<p class="desc vacia">Sin descripción.</p>'}
+        <div class="crit">
+          <span class="crit-sum">${cs.length ? (cs.length === 1 ? '1 criterio de aceptación' : cs.length + ' criterios de aceptación') : 'Sin criterios de aceptación todavía'}</span>
+          ${cs.map((c, i) => `<div class="gwt">
+            <span class="gwt-n">${i + 1}.</span>
+            <p><b class="k-dado">Dado</b> ${resaltar(c.dado, s)}</p>
+            <p><b class="k-cuando">Cuando</b> ${resaltar(c.cuando, s)}</p>
+            <p><b class="k-entonces">Entonces</b> ${resaltar(c.entonces, s)}</p>
+          </div>`).join('')}
+        </div>
+        ${azFila(h)}
+      </article>`;
+    }).join('');
+    renderAzBarra();
+  }
+  $('#q').addEventListener('input', render);
+
+  // ---------- editor ----------
+  const dlg = $('#editor');
+  let editId = null;
+  const critRow = (c, i) => `<div class="crit-ed" data-crit>
+      <div class="crit-ed-top"><span>Criterio ${i + 1}</span><button type="button" data-crit-del>Quitar</button></div>
+      <div class="crit-row"><label class="k-dado">Dado</label><textarea rows="1" data-k="dado" aria-label="Dado, criterio ${i + 1}" placeholder="el contexto o situación inicial…">${esc(c.dado || '')}</textarea></div>
+      <div class="crit-row"><label class="k-cuando">Cuando</label><textarea rows="1" data-k="cuando" aria-label="Cuando, criterio ${i + 1}" placeholder="la acción que realiza el usuario…">${esc(c.cuando || '')}</textarea></div>
+      <div class="crit-row"><label class="k-entonces">Entonces</label><textarea rows="1" data-k="entonces" aria-label="Entonces, criterio ${i + 1}" placeholder="el resultado esperado…">${esc(c.entonces || '')}</textarea></div>
+    </div>`;
+  const leerCriterios = () => [...document.querySelectorAll('#crit-list [data-crit]')].map(r => ({
+    dado: r.querySelector('[data-k="dado"]').value.trim(),
+    cuando: r.querySelector('[data-k="cuando"]').value.trim(),
+    entonces: r.querySelector('[data-k="entonces"]').value.trim()
+  }));
+  const pintar = cs => { $('#crit-list').innerHTML = cs.map(critRow).join(''); };
+  function abrir(id, base) {
+    const h = id ? historias.find(x => x.id === id) : null;
+    editId = h ? h.id : null;
+    const src = h || base || {};
+    $('#ed-title').textContent = h ? 'Editar historia' : base ? 'Nueva historia (copia)' : 'Nueva historia';
+    $('#ed-code').textContent = h ? codigo(h) : codigo({ numero: ultimoNumero + 1 });
+    $('#titulo').value = src.titulo ? (base && !h ? src.titulo + ' (copia)' : src.titulo) : '';
+    $('#desc').value = src.descripcion || '';
+    pintar(src.criterios && src.criterios.length ? src.criterios : [{}]);
+    $('#err').hidden = true;
+    const del = $('#del');
+    del.hidden = !h; del.classList.remove('armed'); del.textContent = 'Eliminar';
+    dlg.showModal();
+    $('#titulo').focus();
+  }
+  $('#add-crit').addEventListener('click', () => {
+    const cs = leerCriterios(); cs.push({}); pintar(cs);
+    const last = [...document.querySelectorAll('#crit-list [data-k="dado"]')].pop();
+    if (last) last.focus();
+  });
+  $('#crit-list').addEventListener('click', ev => {
+    if (!ev.target.closest('[data-crit-del]')) return;
+    const rows = [...document.querySelectorAll('#crit-list [data-crit]')];
+    const cs = leerCriterios(); cs.splice(rows.indexOf(ev.target.closest('[data-crit]')), 1); pintar(cs);
+  });
+  $('#cancel').addEventListener('click', () => dlg.close());
+  $('#del').addEventListener('click', () => {
+    const d = $('#del');
+    if (!d.classList.contains('armed')) {
+      const h0 = historias.find(x => x.id === editId);
+      d.classList.add('armed');
+      d.textContent = h0 && h0.azure ? 'Confirmar (en Azure no se borra)' : 'Confirmar eliminación';
+      return;
+    }
+    const h = historias.find(x => x.id === editId);
+    dlg.close();
+    if (!h) return;
+    historias = historias.filter(x => x.id !== h.id);
+    guardar(); render();
+    toast(`Historia ${codigo(h)} eliminada.`);
+  });
+  $('#form').addEventListener('submit', ev => {
+    ev.preventDefault();
+    const err = m => { $('#err').textContent = m; $('#err').hidden = false; };
+    const titulo = $('#titulo').value.trim();
+    if (!titulo) return err('Escribe el título de la historia.');
+    const cs = leerCriterios().filter(c => c.dado || c.cuando || c.entonces);
+    const inc = cs.findIndex(c => !c.dado || !c.cuando || !c.entonces);
+    if (inc >= 0) return err(`Completa Dado, Cuando y Entonces del criterio ${inc + 1}, o quítalo.`);
+    const prev = editId ? historias.find(x => x.id === editId) : null;
+    const h = {
+      id: prev ? prev.id : genId(),
+      numero: prev ? prev.numero : ++ultimoNumero,
+      titulo, descripcion: $('#desc').value.trim(), criterios: cs,
+      creado: prev ? (prev.creado || hoy()) : hoy(), actualizado: hoy(),
+      azure: prev ? (prev.azure || null) : null // se conserva el vínculo con Azure para actualizar el mismo elemento
+    };
+    if (prev) historias = historias.map(x => x.id === h.id ? h : x); else historias.push(h);
+    if (!guardar()) return;
+    render();
+    dlg.close();
+    toast(prev ? `Historia ${codigo(h)} actualizada.` : `Historia ${codigo(h)} creada.`);
+  });
+  $('#new').addEventListener('click', () => abrir(null));
+  $('#list').addEventListener('click', ev => {
+    if (ev.target.closest('[data-new]')) return abrir(null);
+    const e = ev.target.closest('[data-edit]');
+    if (e) return abrir(e.dataset.edit);
+    const d = ev.target.closest('[data-dup]');
+    if (d) { const h = historias.find(x => x.id === d.dataset.dup); if (h) abrir(null, h); }
+  });
+
+  // ---------- Azure DevOps ----------
+  // Las historias se crean como elementos de trabajo con la API REST de Azure DevOps.
+  // Al volver a subir una historia se ACTUALIZA el mismo elemento y se reemplazan su
+  // título, descripción y criterios de aceptación: no quedan criterios antiguos.
+  const AZ_KEY = 'historias-azure:v1', PAT_KEY = 'historias-azure-pat';
+  let az = { org: '', proyecto: '', tipo: 'User Story', area: '', iteracion: '' };
+  let pat = '';
+  function cargarAz() {
+    try { az = { ...az, ...JSON.parse(localStorage.getItem(AZ_KEY) || '{}') }; } catch (e) {}
+    try { pat = sessionStorage.getItem(PAT_KEY) || localStorage.getItem(PAT_KEY) || ''; } catch (e) { pat = ''; }
+  }
+  const azBase = (org = az.org) => {
+    const s = String(org || '').trim().replace(/\/+$/, '');
+    let m = s.match(/^(?:https?:\/\/)?([a-z0-9-]+)\.visualstudio\.com/i);
+    if (m) return 'https://' + m[1] + '.visualstudio.com';
+    m = s.match(/dev\.azure\.com\/([^\/?#]+)/i);
+    const nombre = m ? m[1] : s.replace(/^https?:\/\//i, '');
+    return /^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(nombre) ? 'https://dev.azure.com/' + nombre : '';
+  };
+  const azProy = () => encodeURIComponent(az.proyecto.trim());
+  const azListo = () => !!(azBase() && az.proyecto.trim() && pat);
+  const destino = () => azBase().toLowerCase() + '|' + az.proyecto.trim().toLowerCase();
+  const firma = h => JSON.stringify([h.titulo, h.descripcion, h.criterios]);
+  // nueva: aún no está en este proyecto · al-dia: igual que en Azure · cambios: se editó después de subirla
+  const estadoAz = h => !h.azure || h.azure.destino !== destino() ? 'nueva' : h.azure.firma === firma(h) ? 'al-dia' : 'cambios';
+
+  async function azFetch(url, opts = {}) {
+    let res;
+    try {
+      res = await fetch(url, { ...opts, headers: { 'Authorization': 'Basic ' + btoa(':' + pat), 'Accept': 'application/json', ...(opts.headers || {}) } });
+    } catch (e) {
+      throw new Error('No se pudo conectar con Azure DevOps. Revisa el nombre de la organización y tu conexión a internet.');
+    }
+    if (res.status === 401 || res.status === 203) throw new Error('Azure DevOps rechazó el token: puede estar mal copiado, vencido o sin el permiso «Work Items: Read & write».');
+    if (res.status === 403) throw new Error('Tu usuario no tiene permiso para esta acción en ese proyecto.');
+    const txt = await res.text();
+    let data = null;
+    try { data = txt ? JSON.parse(txt) : null; }
+    catch (e) { throw new Error('Azure DevOps respondió algo inesperado. Revisa la organización y el token.'); }
+    if (!res.ok) { const err = new Error(data && data.message ? data.message : 'Azure DevOps respondió con el error ' + res.status + '.'); err.status = res.status; throw err; }
+    return data;
+  }
+  const aHtml = s => esc(s).replace(/\n/g, '<br>');
+  const criteriosHtml = cs => cs.length
+    ? '<ol>' + cs.map(c => `<li><b>Dado</b> ${aHtml(c.dado)}<br><b>Cuando</b> ${aHtml(c.cuando)}<br><b>Entonces</b> ${aHtml(c.entonces)}</li>`).join('') + '</ol>'
+    : '';
+  function operaciones(h, crear) {
+    const ops = [{ op: 'add', path: '/fields/System.Title', value: h.titulo }];
+    const desc = h.descripcion ? `<div>${aHtml(h.descripcion)}</div>` : '';
+    if (az.tipo === 'Issue') {
+      // el proceso Basic no tiene campo de criterios: van al final de la descripción
+      ops.push({ op: 'add', path: '/fields/System.Description', value: desc + (h.criterios.length ? '<h3>Criterios de aceptación</h3>' + criteriosHtml(h.criterios) : '') });
+    } else {
+      ops.push({ op: 'add', path: '/fields/System.Description', value: desc });
+      ops.push({ op: 'add', path: '/fields/Microsoft.VSTS.Common.AcceptanceCriteria', value: criteriosHtml(h.criterios) });
+    }
+    if (crear) {
+      ops.push({ op: 'add', path: '/fields/System.Tags', value: codigo(h) + '; Historia de usuario' });
+      if (az.area.trim()) ops.push({ op: 'add', path: '/fields/System.AreaPath', value: az.area.trim() });
+      if (az.iteracion.trim()) ops.push({ op: 'add', path: '/fields/System.IterationPath', value: az.iteracion.trim() });
+    }
+    return ops;
+  }
+  async function subir(h) {
+    const est = estadoAz(h);
+    const headers = { 'Content-Type': 'application/json-patch+json' };
+    let data;
+    if (est !== 'nueva') {
+      try {
+        data = await azFetch(`${azBase()}/_apis/wit/workitems/${h.azure.id}?api-version=7.1`, { method: 'PATCH', headers, body: JSON.stringify(operaciones(h, false)) });
+      } catch (e) {
+        if (e.status !== 404) throw e;
+        h.azure = null; // lo borraron en Azure: se crea de nuevo
+        return subir(h);
+      }
+    } else {
+      data = await azFetch(`${azBase()}/${azProy()}/_apis/wit/workitems/$${encodeURIComponent(az.tipo)}?api-version=7.1`, { method: 'POST', headers, body: JSON.stringify(operaciones(h, true)) });
+    }
+    const url = data && data._links && data._links.html && data._links.html.href;
+    h.azure = { id: data.id, url: /^https:\/\//.test(url || '') ? url : `${azBase()}/${azProy()}/_workitems/edit/${data.id}`,
+      destino: destino(), firma: firma(h), subido: new Date().toISOString() };
+    guardar();
+    return est;
+  }
+
+  // fila de Azure en cada tarjeta
+  function azFila(h) {
+    const est = estadoAz(h);
+    const fecha = h.azure && h.azure.subido ? new Date(h.azure.subido) : null;
+    const cuando = fecha ? `${fecha.getDate()} ${MESES[fecha.getMonth()]} ${String(fecha.getHours()).padStart(2, '0')}:${String(fecha.getMinutes()).padStart(2, '0')}` : '';
+    const txt = est === 'nueva' ? (h.azure ? 'Subida a otro proyecto; aún no está en este' : 'Aún no está en Azure DevOps')
+      : est === 'al-dia' ? `En Azure DevOps · #${h.azure.id} · al día (subida el ${cuando})`
+      : `En Azure DevOps · #${h.azure.id} · tiene cambios sin subir`;
+    const btn = est === 'nueva' ? 'Subir a Azure DevOps' : est === 'cambios' ? 'Actualizar en Azure DevOps' : 'Volver a subir';
+    return `<div class="az-row">
+      <span class="az-chip ${est}">${txt}</span>
+      ${est !== 'nueva' ? `<a href="${esc(h.azure.url)}" target="_blank" rel="noopener">Abrir en Azure ↗</a>` : ''}
+      <button class="btn${est === 'al-dia' ? '' : ' primary'}" type="button" data-az-up="${esc(h.id)}">${btn}</button>
+    </div>`;
+  }
+  function renderAzBarra() {
+    const on = azListo();
+    $('#az-dot').classList.toggle('on', on);
+    $('#az-label').textContent = on ? `Azure: ${az.proyecto.trim()}` : 'Conectar Azure DevOps';
+    const pend = historias.filter(h => estadoAz(h) !== 'al-dia').length;
+    const b = $('#az-sync-all');
+    b.hidden = !on || !pend || subiendo;
+    b.textContent = `Subir ${pend === 1 ? '1 pendiente' : pend + ' pendientes'} a Azure DevOps`;
+  }
+  let subiendo = false;
+  async function subirVarias(lista) {
+    if (!azListo()) { abrirAz(); return; }
+    if (subiendo) return;
+    subiendo = true;
+    renderAzBarra();
+    let creadas = 0, actualizadas = 0;
+    const fallos = [];
+    for (const [i, h] of lista.entries()) {
+      const b = document.querySelector(`[data-az-up="${CSS.escape(h.id)}"]`);
+      if (b) { b.disabled = true; b.textContent = lista.length > 1 ? `Subiendo ${i + 1} de ${lista.length}…` : 'Subiendo…'; }
+      try { (await subir(h)) === 'nueva' ? creadas++ : actualizadas++; }
+      catch (e) { fallos.push(`${codigo(h)}: ${e.message}`); if (/token|conectar/.test(e.message)) break; }
+    }
+    subiendo = false;
+    render();
+    if (fallos.length) toast(`No se pudo subir ${fallos.length === 1 ? 'una historia' : fallos.length + ' historias'}. ${fallos[0]}`, 9000);
+    else {
+      const partes = [];
+      if (creadas) partes.push(`${creadas} creada${creadas === 1 ? '' : 's'}`);
+      if (actualizadas) partes.push(`${actualizadas} actualizada${actualizadas === 1 ? '' : 's'}`);
+      toast(`Azure DevOps: ${partes.join(' y ')}.`);
+    }
+  }
+  $('#list').addEventListener('click', ev => {
+    const b = ev.target.closest('[data-az-up]');
+    if (!b) return;
+    const h = historias.find(x => x.id === b.dataset.azUp);
+    if (h) subirVarias([h]);
+  });
+  $('#az-sync-all').addEventListener('click', () => subirVarias(historias.slice().sort((a, b) => (a.numero || 0) - (b.numero || 0)).filter(h => estadoAz(h) !== 'al-dia')));
+
+  // diálogo de conexión
+  const azDlg = $('#az-dialog');
+  const azStatus = (msg, cls) => { const el = $('#az-status'); el.textContent = msg; el.className = 'az-status' + (cls ? ' ' + cls : ''); el.hidden = !msg; };
+  function abrirAz() {
+    $('#az-org').value = az.org; $('#az-proj').value = az.proyecto; $('#az-type').value = az.tipo;
+    $('#az-area').value = az.area; $('#az-iter').value = az.iteracion;
+    $('#az-pat').value = pat;
+    let recordado = false; try { recordado = !!localStorage.getItem(PAT_KEY); } catch (e) {}
+    $('#az-remember').checked = recordado;
+    azStatus('');
+    azDlg.showModal();
+    (az.org ? $('#az-pat') : $('#az-org')).focus();
+  }
+  function leerAz() {
+    const nuevo = { org: $('#az-org').value.trim(), proyecto: $('#az-proj').value.trim(), tipo: $('#az-type').value,
+      area: $('#az-area').value.trim(), iteracion: $('#az-iter').value.trim() };
+    if (!azBase(nuevo.org)) return 'Escribe el nombre de la organización (por ejemplo «miempresa»).';
+    if (!nuevo.proyecto) return 'Escribe el nombre del proyecto.';
+    if (!$('#az-pat').value.trim()) return 'Pega tu token de acceso personal (PAT).';
+    az = nuevo; pat = $('#az-pat').value.trim();
+    return '';
+  }
+  function guardarAz() {
+    try { localStorage.setItem(AZ_KEY, JSON.stringify(az)); } catch (e) {}
+    try {
+      sessionStorage.setItem(PAT_KEY, pat);
+      if ($('#az-remember').checked) localStorage.setItem(PAT_KEY, pat); else localStorage.removeItem(PAT_KEY);
+    } catch (e) {}
+  }
+  $('#az-open').addEventListener('click', abrirAz);
+  $('#az-cancel').addEventListener('click', () => azDlg.close());
+  $('#az-test').addEventListener('click', async () => {
+    const e0 = leerAz();
+    if (e0) return azStatus(e0, 'bad');
+    const btn = $('#az-test'); btn.disabled = true;
+    azStatus('Probando la conexión…');
+    try {
+      let p;
+      try { p = await azFetch(`${azBase()}/_apis/projects/${azProy()}?api-version=7.1`); }
+      catch (e) { if (e.status === 404) throw new Error(`No se encontró el proyecto «${az.proyecto}» en esa organización.`); throw e; }
+      let t;
+      try { t = await azFetch(`${azBase()}/${azProy()}/_apis/wit/workitemtypes/${encodeURIComponent(az.tipo)}?api-version=7.1`); }
+      catch (e) { if (e.status === 404) throw new Error(`El proyecto «${p.name}» no usa el tipo «${az.tipo}». Elige el de su proceso: Agile → User Story, Scrum → Product Backlog Item, Basic → Issue.`); throw e; }
+      azStatus(`Conexión correcta con el proyecto «${p.name}». Las historias se crearán como «${t.name}». Pulsa «Guardar conexión».`, 'ok');
+    } catch (e) { azStatus(e.message, 'bad'); }
+    finally { btn.disabled = false; }
+  });
+  $('#az-form').addEventListener('submit', ev => {
+    ev.preventDefault();
+    const e0 = leerAz();
+    if (e0) return azStatus(e0, 'bad');
+    guardarAz();
+    azDlg.close();
+    render();
+    toast(`Conexión guardada: ${az.proyecto}.`);
+  });
+  $('#az-forget').addEventListener('click', () => {
+    pat = '';
+    try { sessionStorage.removeItem(PAT_KEY); localStorage.removeItem(PAT_KEY); } catch (e) {}
+    $('#az-pat').value = '';
+    azStatus('Token olvidado. La organización y el proyecto se mantienen; para subir de nuevo pega un token.', '');
+    render();
+  });
+
+  // ---------- descargas ----------
+  function descargar(nombre, blob) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = nombre;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }
+  let excelLib = null;
+  function loadExcelJS() {
+    if (window.ExcelJS) return Promise.resolve(window.ExcelJS);
+    if (excelLib) return excelLib;
+    excelLib = new Promise((ok, bad) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js';
+      s.onload = () => window.ExcelJS ? ok(window.ExcelJS) : bad(new Error('ExcelJS'));
+      s.onerror = () => { excelLib = null; bad(new Error('ExcelJS')); };
+      document.head.appendChild(s);
+    });
+    return excelLib;
+  }
+  // Excel: una fila por criterio, lista para usar como base de casos de prueba
+  $('#xls').addEventListener('click', async () => {
+    const btn = $('#xls');
+    if (btn.disabled) return;
+    btn.disabled = true;
+    const label = btn.innerHTML;
+    btn.textContent = 'Preparando Excel…';
+    try {
+      const ExcelJS = await loadExcelJS();
+      const wb = new ExcelJS.Workbook();
+      wb.creator = 'Historias de Usuario'; wb.created = new Date();
+      const ws = wb.addWorksheet('Historias de usuario', { views: [{ state: 'frozen', ySplit: 3 }],
+        pageSetup: { orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
+      ws.columns = [{ width: 10 }, { width: 34 }, { width: 46 }, { width: 6 }, { width: 34 }, { width: 34 }, { width: 38 }];
+      ws.mergeCells('A1:G1');
+      ws.getCell('A1').value = 'Historias de usuario';
+      ws.getCell('A1').font = { size: 18, bold: true };
+      const hs = historias.slice().sort((a, b) => (a.numero || 0) - (b.numero || 0));
+      ws.mergeCells('A2:G2');
+      ws.getCell('A2').value = `${hs.length} historias · generado el ${fechaLarga()}`;
+      ws.getCell('A2').font = { color: { argb: 'FF5A6675' } };
+      const line = { style: 'thin', color: { argb: 'FFD5DBE3' } };
+      const border = { top: line, bottom: line, left: line, right: line };
+      const hr = ws.getRow(3);
+      hr.values = ['Código', 'Historia', 'Descripción', 'N.º', 'Dado', 'Cuando', 'Entonces'];
+      hr.eachCell(c => { c.font = { bold: true, color: { argb: 'FFFFFFFF' } }; c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F2A37' } }; c.alignment = { horizontal: 'center', vertical: 'middle' }; c.border = border; });
+      let r = 4;
+      hs.forEach((h, i) => {
+        const cs = h.criterios && h.criterios.length ? h.criterios : [null];
+        const fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: i % 2 ? 'FFF5F7FA' : 'FFFFFFFF' } };
+        cs.forEach((c, j) => {
+          const row = ws.getRow(r++);
+          row.values = [codigo(h), h.titulo || '', h.descripcion || '', c ? j + 1 : '', c ? c.dado : '(sin criterios)', c ? c.cuando : '', c ? c.entonces : ''];
+          row.eachCell({ includeEmpty: true }, cell => { cell.border = border; cell.fill = fill; cell.alignment = { vertical: 'top', wrapText: true }; });
+          row.getCell(1).font = { bold: true, color: { argb: 'FF2453C9' } };
+          row.getCell(4).alignment = { vertical: 'top', horizontal: 'center' };
+        });
+      });
+      const buf = await wb.xlsx.writeBuffer();
+      descargar(`historias de usuario ${hoy()}.xlsx`, new Blob([buf]));
+      toast('Excel de historias descargado.');
+    } catch (e) {
+      toast('No se pudo generar el Excel. Revisa tu conexión a internet e inténtalo de nuevo.');
+    } finally {
+      btn.disabled = !historias.length;
+      btn.innerHTML = label;
+    }
+  });
+
+  // ---------- respaldo ----------
+  $('#bk-export').addEventListener('click', () => {
+    const data = { app: 'historias-usuario', version: 1, exportado: new Date().toISOString(), ultimoNumero, historias };
+    descargar(`respaldo-historias-${hoy()}.json`, new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
+    toast(`Respaldo descargado (${historias.length === 1 ? '1 historia' : historias.length + ' historias'}).`);
+  });
+  $('#bk-import').addEventListener('click', () => $('#bk-file').click());
+  $('#bk-file').addEventListener('change', ev => {
+    const f = ev.target.files && ev.target.files[0];
+    ev.target.value = '';
+    if (!f) return;
+    const rd = new FileReader();
+    rd.onload = () => {
+      let obj;
+      try { obj = JSON.parse(rd.result); } catch (e) { toast('El archivo no es un respaldo válido.'); return; }
+      if (!obj || obj.app !== 'historias-usuario' || !Array.isArray(obj.historias)) { toast('El archivo no es un respaldo de historias de usuario.'); return; }
+      const validas = obj.historias.filter(h => h && typeof h.id === 'string' && typeof h.titulo === 'string')
+        .map(h => ({ id: h.id, numero: Number(h.numero) || 0, titulo: h.titulo, descripcion: String(h.descripcion || ''),
+          criterios: (Array.isArray(h.criterios) ? h.criterios : []).map(c => ({ dado: String(c.dado || ''), cuando: String(c.cuando || ''), entonces: String(c.entonces || '') })),
+          creado: h.creado || hoy(), actualizado: h.actualizado || hoy(),
+          azure: h.azure && Number.isInteger(h.azure.id) && /^https:\/\//.test(String(h.azure.url || '')) ? {
+            id: h.azure.id, url: String(h.azure.url), destino: String(h.azure.destino || ''), firma: String(h.azure.firma || ''), subido: String(h.azure.subido || '')
+          } : null }));
+      const porId = new Map(historias.map(h => [h.id, h]));
+      validas.forEach(h => porId.set(h.id, h));
+      historias = [...porId.values()];
+      ultimoNumero = Math.max(ultimoNumero, Number(obj.ultimoNumero) || 0, ...historias.map(h => h.numero || 0));
+      guardar(); render();
+      toast(`Respaldo importado: ${validas.length === 1 ? '1 historia' : validas.length + ' historias'}.`);
+    };
+    rd.onerror = () => toast('No se pudo leer el archivo.');
+    rd.readAsText(f);
+  });
+
+  // ---------- modo oscuro ----------
+  const THEME_KEY = 'historias-tema';
+  const mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+  const esOscuro = () => { const t = document.documentElement.dataset.theme; return t ? t === 'dark' : !!(mq && mq.matches); };
+  try { const t = localStorage.getItem(THEME_KEY); if (t === 'dark' || t === 'light') document.documentElement.dataset.theme = t; } catch (e) {}
+  $('#dark-toggle').checked = esOscuro();
+  $('#dark-toggle').addEventListener('change', ev => {
+    const t = ev.target.checked ? 'dark' : 'light';
+    document.documentElement.dataset.theme = t;
+    try { localStorage.setItem(THEME_KEY, t); } catch (e) {}
+  });
+  if (mq && mq.addEventListener) mq.addEventListener('change', () => { $('#dark-toggle').checked = esOscuro(); });
+
+  let toastT;
+  function toast(msg, ms) {
+    const el = $('#toast'); el.textContent = msg; el.hidden = false;
+    clearTimeout(toastT); toastT = setTimeout(() => { el.hidden = true; }, ms || 3800);
+  }
+
+  cargar();
+  cargarAz();
+  render();
+})();
+</script>
+</body>
+</html>
