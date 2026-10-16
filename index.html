@@ -379,6 +379,46 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
 .pl-table .proj-link:hover { text-decoration: underline; }
 .table-scroll { overflow-x: auto; }
 .all-good { display: flex; align-items: center; gap: 10px; color: var(--ok); font-weight: 600; padding: 10px 0; }
+/* Historias de usuario */
+.hist { display: grid; gap: 16px; }
+.hist-head { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: flex-end; justify-content: space-between; }
+.hu-tools { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
+.hu-search { display: flex; align-items: center; gap: 8px; flex: 1 1 320px; max-width: 560px; border: 1px solid var(--line); border-radius: 6px;
+  background: var(--surface); padding: 0 10px; color: var(--muted); }
+.hu-search:focus-within { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.hu-search input { flex: 1; min-width: 0; border: 0; background: transparent; padding: 9px 0; outline: none; }
+.hu-list { display: grid; gap: 12px; }
+.hu-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); display: grid; gap: 10px; padding: 14px 16px; }
+.hu-card-top { display: flex; gap: 10px 14px; align-items: baseline; flex-wrap: wrap; }
+.hu-code { font-family: var(--f-mono); font-size: 12px; font-weight: 500; color: var(--accent); background: var(--accent-soft); padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+.hu-title { margin: 0; font-family: var(--f-display); font-size: 17px; font-weight: 600; flex: 1 1 260px; min-width: 0; text-wrap: balance; }
+.hu-card-actions { display: flex; gap: 6px; margin-left: auto; }
+.hu-card-actions .btn { padding: 5px 10px; font-size: 13px; }
+.hu-desc { margin: 0; color: var(--fg); white-space: pre-line; max-width: 80ch; }
+.hu-desc.vacia { color: var(--muted); font-style: italic; }
+.hu-crit { display: grid; gap: 6px; }
+.hu-crit-sum { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
+.gwt { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 4px 10px; padding: 10px 12px; border-radius: 6px; background: var(--surface-2); }
+.gwt-n { font-family: var(--f-mono); font-size: 12px; color: var(--muted); grid-row: span 3; padding-top: 1px; }
+.gwt p { margin: 0; white-space: pre-line; }
+.gwt b { display: inline-block; min-width: 70px; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; }
+.gwt .k-dado { color: var(--p1); } .gwt .k-cuando { color: var(--p2); } .gwt .k-entonces { color: var(--ok); }
+.hu-empty { background: var(--surface); border: 1px dashed var(--line); border-radius: var(--radius); padding: 36px 20px; text-align: center; color: var(--muted); display: grid; gap: 10px; justify-items: center; }
+mark { background: color-mix(in srgb, var(--warn) 30%, transparent); color: inherit; border-radius: 2px; }
+.hu-dialog { width: min(720px, calc(100vw - 32px)); }
+.hu-ed-top { display: flex; gap: 12px; align-items: center; }
+.hu-crit-head { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
+.hu-crit-head h4 { margin: 0; font-size: 14px; }
+.hu-crit-list { display: grid; gap: 10px; }
+.crit-ed { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); }
+.crit-ed-top { display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 600; color: var(--muted); }
+.crit-ed-top button { border: 0; background: none; color: var(--bad); cursor: pointer; font-size: 12.5px; padding: 2px 4px; }
+.crit-row { display: grid; grid-template-columns: 82px minmax(0, 1fr); gap: 8px; align-items: start; }
+.crit-row label { font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding-top: 8px; }
+.crit-row textarea, .field textarea { width: 100%; min-width: 0; border: 1px solid var(--line); border-radius: 6px; padding: 7px 9px; background: var(--surface); resize: vertical; font: inherit; }
+.crit-row textarea:focus, .field textarea:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 2px var(--accent-soft); }
+.crit-row textarea { min-height: 38px; }
+@media (max-width: 520px) { .crit-row { grid-template-columns: minmax(0, 1fr); gap: 2px; } .crit-row label { padding-top: 0; } }
 @media (max-width: 1100px) { .port-grid { grid-template-columns: minmax(0, 1fr); } .port-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 520px) { .pf-row, .rs-row { grid-template-columns: minmax(0, 1fr); gap: 4px; } }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
@@ -395,6 +435,7 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
     <div class="seg view-seg" role="group" aria-label="Vista">
       <button type="button" data-view="proj">Cronograma</button>
       <button type="button" data-view="port">Métricas de todos los proyectos</button>
+      <button type="button" data-view="hist">Historias de usuario</button>
     </div>
     <div class="proj-actions">
       <button class="btn" id="proj-new" type="button">+ Nuevo cronograma</button>
@@ -445,6 +486,26 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
         <div id="port-late"></div>
       </div>
     </div>
+  </section>
+
+  <section class="hist" id="view-hist" hidden>
+    <div class="hist-head">
+      <div class="port-head">
+        <span class="eyebrow">Módulo de historias de usuario</span>
+        <h1 class="port-title">Historias de usuario</h1>
+        <span class="sub" id="hu-sub">Cargando…</span>
+      </div>
+      <div class="actions">
+        <button class="btn" id="hu-xls" type="button"><span class="xls-ico" aria-hidden="true">X</span>Descargar Excel</button>
+        <button class="btn primary" id="hu-new" type="button">+ Nueva historia</button>
+      </div>
+    </div>
+    <div class="hu-tools">
+      <label class="hu-search" for="hu-q"><span aria-hidden="true">⌕</span>
+        <input id="hu-q" type="search" placeholder="Buscar por código, título, descripción o criterio…" autocomplete="off"></label>
+      <span class="hint" id="hu-count"></span>
+    </div>
+    <div class="hu-list" id="hu-list"></div>
   </section>
 
   <div class="view-proj" id="view-proj">
@@ -505,6 +566,32 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
   </section>
   </div>
 </div>
+
+<dialog id="hu-editor" class="hu-dialog" aria-labelledby="hu-ed-title">
+  <form class="ed" id="hu-form" novalidate>
+    <div class="hu-ed-top"><h3 id="hu-ed-title">Nueva historia</h3><span class="hu-code" id="hu-ed-code"></span></div>
+    <div class="fields">
+      <div class="field full"><label for="hu-titulo">Título de la historia</label>
+        <input id="hu-titulo" type="text" maxlength="160" placeholder="Ej.: Recuperar contraseña por correo"></div>
+      <div class="field full"><label for="hu-desc">Descripción</label>
+        <textarea id="hu-desc" rows="4" maxlength="4000" placeholder="Ej.: Como cliente quiero recuperar mi contraseña desde el correo para volver a entrar sin llamar a soporte."></textarea></div>
+    </div>
+    <div class="hu-crit-head">
+      <h4>Criterios de aceptación</h4>
+      <span class="hint">Cada criterio describe una situación y el resultado esperado.</span>
+    </div>
+    <div class="hu-crit-list" id="hu-crit-list"></div>
+    <button class="btn" type="button" id="hu-add-crit">+ Agregar criterio</button>
+    <p class="ed-err" id="hu-err" hidden></p>
+    <div class="ed-foot">
+      <button class="btn danger" type="button" id="hu-del">Eliminar</button>
+      <div class="right">
+        <button class="btn" type="button" id="hu-cancel">Cancelar</button>
+        <button class="btn primary" type="submit">Guardar historia</button>
+      </div>
+    </div>
+  </form>
+</dialog>
 
 <dialog id="editor" aria-labelledby="ed-title">
   <form class="ed" id="ed-form" novalidate>
@@ -1044,9 +1131,10 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
       : '<option value="">— Sin cronogramas —</option>';
     sel.disabled = !state.proyectos.length;
     $('#proj-count').textContent = (state.proyectos.length === 1 ? '1 cronograma guardado' : state.proyectos.length + ' cronogramas guardados') + ' en este navegador';
-    $('#proj-new').hidden = !state.canWrite;
+    $('#proj-new').hidden = !state.canWrite || state.view === 'hist';
+    document.querySelector('.proj-pick').hidden = state.view === 'hist';
     const del = $('#proj-del');
-    del.hidden = !state.canWrite || !state.pid || state.view === 'port';
+    del.hidden = !state.canWrite || !state.pid || state.view !== 'proj';
   }
 
   // avance manual en la tabla (se guarda tras una pausa)
@@ -1543,14 +1631,16 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
 
   // ---------- métricas de todos los proyectos ----------
   const VIEW_KEY = 'cronograma-vista';
-  try { const v = localStorage.getItem(VIEW_KEY); if (v === 'port' || v === 'proj') state.view = v; } catch (e) {}
+  try { const v = localStorage.getItem(VIEW_KEY); if (v === 'port' || v === 'proj' || v === 'hist') state.view = v; } catch (e) {}
   if (!state.view) state.view = 'proj';
   state.port = null;
   function setView(v) {
     state.view = v;
     try { localStorage.setItem(VIEW_KEY, v); } catch (e) {}
     $('#view-port').hidden = v !== 'port';
-    $('#view-proj').hidden = v === 'port';
+    $('#view-proj').hidden = v !== 'proj';
+    $('#view-hist').hidden = v !== 'hist';
+    if (v === 'hist') renderHist();
     document.querySelectorAll('.view-seg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === v)));
     $('#nproj-form').hidden = true;
     renderProjects();
@@ -1684,6 +1774,212 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
     window.scrollTo({ top: 0 });
   });
 
+  // ---------- historias de usuario (módulo independiente de los cronogramas) ----------
+  // Cada historia: historias/<id> = { numero, titulo, descripcion, criterios: [{dado, cuando, entonces}], creado, actualizado }
+  state.historias = [];
+  state.historiasListas = false;
+  const huCodigo = h => 'HU-' + String(h.numero || 0).padStart(3, '0');
+  const huQ = () => ($('#hu-q').value || '').trim().toLowerCase();
+  const resaltar = (txt, q) => {
+    const s = esc(txt);
+    if (!q) return s;
+    const i = String(txt).toLowerCase().indexOf(q);
+    if (i < 0) return s;
+    return esc(String(txt).slice(0, i)) + '<mark>' + esc(String(txt).slice(i, i + q.length)) + '</mark>' + esc(String(txt).slice(i + q.length));
+  };
+  function renderHist() {
+    if (state.view !== 'hist') return;
+    const todas = state.historias.slice().sort((a, b) => (a.numero || 0) - (b.numero || 0));
+    const nCrit = todas.reduce((a, h) => a + (h.criterios || []).length, 0);
+    $('#hu-sub').textContent = state.historiasListas
+      ? `${todas.length === 1 ? '1 historia' : todas.length + ' historias'} · ${nCrit === 1 ? '1 criterio de aceptación' : nCrit + ' criterios de aceptación'}`
+      : 'Cargando…';
+    $('#hu-xls').disabled = !todas.length;
+    const q = huQ();
+    const lista = q ? todas.filter(h => [huCodigo(h), h.titulo, h.descripcion, ...(h.criterios || []).flatMap(c => [c.dado, c.cuando, c.entonces])]
+      .some(x => String(x || '').toLowerCase().includes(q))) : todas;
+    $('#hu-count').textContent = q ? `${lista.length} de ${todas.length} coinciden con «${$('#hu-q').value.trim()}»` : '';
+    const el = $('#hu-list');
+    if (!state.historiasListas) { el.innerHTML = '<div class="hu-empty">Cargando historias…</div>'; return; }
+    if (!todas.length) {
+      el.innerHTML = `<div class="hu-empty"><strong>Aún no hay historias de usuario.</strong>
+        <span>Cada historia tiene un título, una descripción y sus criterios de aceptación en formato Dado / Cuando / Entonces.</span>
+        <button class="btn primary" type="button" data-hu-new>+ Escribir la primera historia</button></div>`;
+      return;
+    }
+    if (!lista.length) { el.innerHTML = '<div class="hu-empty">Ninguna historia coincide con la búsqueda.</div>'; return; }
+    el.innerHTML = lista.map(h => {
+      const cs = h.criterios || [];
+      return `<article class="hu-card">
+        <div class="hu-card-top">
+          <span class="hu-code">${resaltar(huCodigo(h), q)}</span>
+          <h3 class="hu-title">${resaltar(h.titulo || 'Sin título', q)}</h3>
+          <div class="hu-card-actions">
+            <button class="btn" type="button" data-hu-edit="${esc(h.id)}">Editar</button>
+            <button class="btn" type="button" data-hu-dup="${esc(h.id)}" title="Crear una copia para usarla de base">Duplicar</button>
+          </div>
+        </div>
+        ${h.descripcion ? `<p class="hu-desc">${resaltar(h.descripcion, q)}</p>` : '<p class="hu-desc vacia">Sin descripción.</p>'}
+        <div class="hu-crit">
+          <span class="hu-crit-sum">${cs.length ? (cs.length === 1 ? '1 criterio de aceptación' : cs.length + ' criterios de aceptación') : 'Sin criterios de aceptación todavía'}</span>
+          ${cs.map((c, i) => `<div class="gwt">
+            <span class="gwt-n">${i + 1}.</span>
+            <p><b class="k-dado">Dado</b> ${resaltar(c.dado, q)}</p>
+            <p><b class="k-cuando">Cuando</b> ${resaltar(c.cuando, q)}</p>
+            <p><b class="k-entonces">Entonces</b> ${resaltar(c.entonces, q)}</p>
+          </div>`).join('')}
+        </div>
+      </article>`;
+    }).join('');
+  }
+  $('#hu-q').addEventListener('input', renderHist);
+
+  // editor de historias
+  const huDlg = $('#hu-editor');
+  let huEditId = null;
+  function critRow(c, i) {
+    return `<div class="crit-ed" data-crit>
+      <div class="crit-ed-top"><span>Criterio ${i + 1}</span><button type="button" data-crit-del>Quitar</button></div>
+      <div class="crit-row"><label class="k-dado" style="color:var(--p1)">Dado</label><textarea rows="1" data-k="dado" placeholder="el contexto o situación inicial…">${esc(c.dado || '')}</textarea></div>
+      <div class="crit-row"><label style="color:var(--p2)">Cuando</label><textarea rows="1" data-k="cuando" placeholder="la acción que realiza el usuario…">${esc(c.cuando || '')}</textarea></div>
+      <div class="crit-row"><label style="color:var(--ok)">Entonces</label><textarea rows="1" data-k="entonces" placeholder="el resultado esperado…">${esc(c.entonces || '')}</textarea></div>
+    </div>`;
+  }
+  const leerCriterios = () => [...document.querySelectorAll('#hu-crit-list [data-crit]')].map(row => ({
+    dado: row.querySelector('[data-k="dado"]').value.trim(),
+    cuando: row.querySelector('[data-k="cuando"]').value.trim(),
+    entonces: row.querySelector('[data-k="entonces"]').value.trim()
+  }));
+  function pintarCriterios(cs) {
+    $('#hu-crit-list').innerHTML = cs.map(critRow).join('');
+  }
+  function openHu(id, base) {
+    const h = id ? state.historias.find(x => x.id === id) : null;
+    huEditId = h ? h.id : null;
+    const src = h || base || {};
+    const sig = Math.max(0, ...state.historias.map(x => x.numero || 0)) + 1;
+    $('#hu-ed-title').textContent = h ? 'Editar historia' : base ? 'Nueva historia (copia)' : 'Nueva historia';
+    $('#hu-ed-code').textContent = h ? huCodigo(h) : huCodigo({ numero: sig });
+    $('#hu-titulo').value = src.titulo ? (base && !h ? src.titulo + ' (copia)' : src.titulo) : '';
+    $('#hu-desc').value = src.descripcion || '';
+    pintarCriterios((src.criterios && src.criterios.length) ? src.criterios : [{}]);
+    $('#hu-err').hidden = true;
+    const del = $('#hu-del');
+    del.hidden = !h; del.classList.remove('armed'); del.textContent = 'Eliminar';
+    huDlg.showModal();
+    $('#hu-titulo').focus();
+  }
+  $('#hu-add-crit').addEventListener('click', () => {
+    const cs = leerCriterios(); cs.push({});
+    pintarCriterios(cs);
+    const last = [...document.querySelectorAll('#hu-crit-list [data-k="dado"]')].pop();
+    if (last) last.focus();
+  });
+  $('#hu-crit-list').addEventListener('click', ev => {
+    if (!ev.target.closest('[data-crit-del]')) return;
+    const rows = [...document.querySelectorAll('#hu-crit-list [data-crit]')];
+    const i = rows.indexOf(ev.target.closest('[data-crit]'));
+    const cs = leerCriterios(); cs.splice(i, 1);
+    pintarCriterios(cs);
+  });
+  $('#hu-cancel').addEventListener('click', () => huDlg.close());
+  $('#hu-del').addEventListener('click', () => {
+    const d = $('#hu-del');
+    if (!d.classList.contains('armed')) { d.classList.add('armed'); d.textContent = 'Confirmar eliminación'; return; }
+    const h = state.historias.find(x => x.id === huEditId);
+    huDlg.close();
+    if (!h || !db) return;
+    state.historias = state.historias.filter(x => x.id !== h.id);
+    renderHist();
+    const ref = db.collection('historias').doc(h.id);
+    queue(() => ref.delete());
+    toast(`Historia ${huCodigo(h)} eliminada.`);
+  });
+  $('#hu-form').addEventListener('submit', ev => {
+    ev.preventDefault();
+    const err = m => { $('#hu-err').textContent = m; $('#hu-err').hidden = false; };
+    const titulo = $('#hu-titulo').value.trim();
+    if (!titulo) return err('Escribe el título de la historia.');
+    const cs = leerCriterios().filter(c => c.dado || c.cuando || c.entonces);
+    const inc = cs.findIndex(c => !c.dado || !c.cuando || !c.entonces);
+    if (inc >= 0) return err(`Completa Dado, Cuando y Entonces del criterio ${inc + 1}, o quítalo.`);
+    if (!db) return;
+    const prev = huEditId ? state.historias.find(x => x.id === huEditId) : null;
+    const numero = prev ? prev.numero : Math.max(0, ...state.historias.map(x => x.numero || 0)) + 1;
+    const ref = prev ? db.collection('historias').doc(prev.id) : db.collection('historias').doc();
+    const body = { numero, titulo, descripcion: $('#hu-desc').value.trim(), criterios: cs,
+      creado: prev ? (prev.creado || todayISO()) : todayISO(), actualizado: todayISO() };
+    const i = state.historias.findIndex(x => x.id === ref.id);
+    if (i >= 0) state.historias[i] = { id: ref.id, ...body }; else state.historias.push({ id: ref.id, ...body });
+    renderHist();
+    queue(() => ref.set(body));
+    huDlg.close();
+    toast(prev ? `Historia ${huCodigo(body)} actualizada.` : `Historia ${huCodigo(body)} creada.`);
+  });
+  $('#hu-new').addEventListener('click', () => openHu(null));
+  $('#hu-list').addEventListener('click', ev => {
+    if (ev.target.closest('[data-hu-new]')) return openHu(null);
+    const e = ev.target.closest('[data-hu-edit]');
+    if (e) return openHu(e.dataset.huEdit);
+    const d = ev.target.closest('[data-hu-dup]');
+    if (d) { const h = state.historias.find(x => x.id === d.dataset.huDup); if (h) openHu(null, h); }
+  });
+
+  // Excel de historias: una fila por criterio, lista para usar como base de casos de prueba
+  async function exportHistoriasExcel() {
+    const btn = $('#hu-xls');
+    if (btn.disabled) return;
+    btn.disabled = true;
+    const label = btn.innerHTML;
+    btn.textContent = 'Preparando Excel…';
+    try {
+      const ExcelJS = await loadExcelJS();
+      const wb = new ExcelJS.Workbook();
+      wb.creator = 'Cronograma de Proyectos TI'; wb.created = new Date();
+      const ws = wb.addWorksheet('Historias de usuario', { views: [{ state: 'frozen', ySplit: 3 }],
+        pageSetup: { orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
+      ws.columns = [{ width: 10 }, { width: 34 }, { width: 46 }, { width: 6 }, { width: 34 }, { width: 34 }, { width: 38 }];
+      ws.mergeCells('A1:G1');
+      ws.getCell('A1').value = 'Historias de usuario';
+      ws.getCell('A1').font = { size: 18, bold: true };
+      ws.mergeCells('A2:G2');
+      const hs = state.historias.slice().sort((a, b) => (a.numero || 0) - (b.numero || 0));
+      ws.getCell('A2').value = `${hs.length} historias · generado el ${fmtLargo(parse(todayISO()))}`;
+      ws.getCell('A2').font = { color: { argb: XL.muted } };
+      const border = { top: { style: 'thin', color: { argb: XL.line } }, bottom: { style: 'thin', color: { argb: XL.line } },
+        left: { style: 'thin', color: { argb: XL.line } }, right: { style: 'thin', color: { argb: XL.line } } };
+      const hr = ws.getRow(3);
+      hr.values = ['Código', 'Historia', 'Descripción', 'N.º', 'Dado', 'Cuando', 'Entonces'];
+      hr.eachCell(c => { c.font = { bold: true, color: { argb: XL.headTxt } }; c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XL.head } }; c.alignment = { horizontal: 'center', vertical: 'middle' }; c.border = border; });
+      let r = 4;
+      hs.forEach((h, i) => {
+        const cs = (h.criterios && h.criterios.length) ? h.criterios : [null];
+        const fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: i % 2 ? 'FFF5F7FA' : 'FFFFFFFF' } };
+        cs.forEach((c, j) => {
+          const row = ws.getRow(r++);
+          row.values = [huCodigo(h), h.titulo || '', h.descripcion || '', c ? j + 1 : '', c ? c.dado : '(sin criterios)', c ? c.cuando : '', c ? c.entonces : ''];
+          row.eachCell({ includeEmpty: true }, cell => { cell.border = border; cell.fill = fill; cell.alignment = { vertical: 'top', wrapText: true }; });
+          row.getCell(1).font = { bold: true, color: { argb: XL.accent } };
+          row.getCell(4).alignment = { vertical: 'top', horizontal: 'center' };
+        });
+      });
+      const buf = await wb.xlsx.writeBuffer();
+      await downloads.save({ filename: `historias de usuario ${todayISO()}.xlsx`, data: new Blob([buf]) });
+      toast('Excel de historias descargado.');
+    } catch (e) {
+      toast('No se pudo generar el Excel. Revisa tu conexión a internet e inténtalo de nuevo.');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = label;
+    }
+  }
+  $('#hu-xls').addEventListener('click', exportHistoriasExcel);
+  function onHistorias(snap) {
+    state.historias = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    state.historiasListas = true;
+    renderHist();
+  }
+
   // ---------- almacenamiento local (versión independiente) ----------
   // Base de datos mínima sobre localStorage con la misma forma que usa la página:
   // doc(path) / collection(path), set, delete, onSnapshot. Todo queda en ESTE navegador.
@@ -1765,7 +2061,7 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
       let obj;
       try { obj = JSON.parse(rd.result); } catch (e) { toast('El archivo no es un respaldo válido.'); return; }
       const datos = obj && obj.datos;
-      const okPaths = datos && typeof datos === 'object' && Object.keys(datos).every(k => /^proyectos\/[^/]+(\/(tareas|historial)\/[^/]+)?$/.test(k));
+      const okPaths = datos && typeof datos === 'object' && Object.keys(datos).every(k => /^(proyectos\/[^/]+(\/(tareas|historial)\/[^/]+)?|historias\/[^/]+)$/.test(k));
       if (!okPaths || obj.app !== 'cronograma-proyectos-ti') { toast('El archivo no es un respaldo de este cronograma.'); return; }
       const n = Object.keys(datos).filter(k => k.split('/').length === 2).length;
       db.importAll(datos);
@@ -1785,7 +2081,10 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
   } catch (e) { db = null; }
   setView(state.view);
   if (!db) { state.mode = 'offline'; render(); }
-  else db.collection('proyectos').onSnapshot(onProjects);
+  else {
+    db.collection('proyectos').onSnapshot(onProjects);
+    db.collection('historias').onSnapshot(onHistorias);
+  }
 })();
 </script>
 </body>
