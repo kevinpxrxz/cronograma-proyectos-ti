@@ -52,22 +52,24 @@ Aplicación independiente del cronograma para escribir historias de usuario y su
 - **Criterios de aceptación:** una frase por criterio, numerada CA-01, CA-02…, que dice qué se espera de la funcionalidad. Por ejemplo: *"Como usuario, debo poder acceder al portal con mi usuario y contraseña."* Los criterios escritos en formatos anteriores se convierten solos a una frase.
 - **Validación:** avisa si un criterio está incompleto.
 - **Herramientas:** buscador, duplicar, descarga en Excel (una fila por criterio) y respaldo `.json`.
-- **Azure DevOps:** cada historia se crea como *User Story*, *Product Backlog Item* o *Issue* (según el proceso del proyecto), con:
-  - título, descripción y criterios de aceptación;
-  - la etiqueta `HU-xxx`;
-  - opcionalmente, ruta de área e iteración.
+- **Azure DevOps:** te conectas solo con la **organización** y un **token**. Después, en los **filtros** de la página, eliges:
+  - el **proyecto**;
+  - la **ruta de área**;
+  - el **sprint** (opcional).
+
+  Las listas se cargan desde Azure. El tipo de elemento (*User Story*, *Product Backlog Item*, *Requirement* o *Issue*) se detecta solo según el proceso del proyecto. Cada historia se crea en el área y sprint elegidos, con título, descripción, criterios de aceptación y la etiqueta `HU-xxx`.
+- **Ver el proyecto:** *"Ver historias del tablero"* muestra los elementos que ya están en Azure para ese proyecto y área (estado, asignado, sprint), con buscador y filtro por estado. Marca cuáles salieron de la aplicación. Las historias de la aplicación se pueden filtrar en **Todas**, **De este proyecto y área** o **Sin subir o con cambios**.
 - **Sin criterios antiguos:** si editas una historia ya subida, aparece como *"tiene cambios sin subir"*. Al volver a subirla se **actualiza el mismo elemento de trabajo** y su título, descripción y criterios se **reemplazan por completo**. Las etiquetas, el estado, el responsable y los comentarios que tenga en Azure no se tocan.
 - **Si borraron el elemento en Azure,** al volver a subir la historia se crea de nuevo.
 
 ### Conectar con Azure DevOps
 
-1. En Azure DevOps abre **User settings → Personal access tokens → New Token**. Dale el permiso **Work Items: Read & write**.
-2. En la aplicación pulsa **Conectar Azure DevOps** y completa:
-   - la organización, por ejemplo `miempresa` o `https://dev.azure.com/miempresa`;
-   - el proyecto;
-   - el tipo de elemento de trabajo;
-   - el token.
+1. En Azure DevOps abre **User settings → Personal access tokens → New Token**. Dale los permisos **Work Items: Read & write** y **Project and Team: Read**.
+2. En la aplicación pulsa **Conectar Azure DevOps** y escribe:
+   - la **organización**, por ejemplo `miempresa` o `https://dev.azure.com/miempresa`;
+   - el **token**.
 3. Pulsa **Probar conexión** y luego **Guardar conexión**.
+4. En los filtros que aparecen, elige **proyecto**, **ruta de área** y, si quieres, **sprint**.
 
 ### Conectar la IA
 

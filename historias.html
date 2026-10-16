@@ -150,6 +150,31 @@ details summary { cursor: pointer; color: var(--accent); font-size: 13px; }
 mark.pd { background: color-mix(in srgb, var(--bad) 18%, transparent); color: var(--bad); font-weight: 600; padding: 0 2px; }
 .fix-cambios li::before { content: "✓"; color: var(--ok); }
 .fix-pd { padding: 10px 12px; border-radius: 6px; border: 1px solid color-mix(in srgb, var(--warn) 45%, var(--line)); }
+/* filtros de Azure DevOps y vista del tablero */
+.az-bar { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; display: grid; gap: 10px; }
+.azf-row { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: flex-end; }
+.azf { display: grid; gap: 4px; min-width: 0; flex: 1 1 200px; }
+.azf label { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.azf select, .azb-tools select { width: 100%; border: 1px solid var(--line); border-radius: 6px; padding: 7px 9px; background: var(--surface); min-width: 0; }
+.azf select:focus, .azb-tools select:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 2px var(--accent-soft); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; margin-left: auto; flex-wrap: wrap; }
+.seg button { border: 0; background: var(--surface); padding: 6px 12px; cursor: pointer; font-size: 13px; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.az-board { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; display: grid; gap: 10px; }
+.azb-head { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; justify-content: space-between; }
+.azb-head h2 { margin: 0; font-family: var(--f-display); font-size: 16px; }
+.azb-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.azb-tools .search { flex: 0 1 260px; }
+.azb-tools select { width: auto; }
+.table-scroll { overflow-x: auto; }
+.azb-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.azb-table th { text-align: left; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.azb-table td { padding: 7px 8px; border-bottom: 1px solid var(--surface-2); vertical-align: top; }
+.azb-table td.num { font-family: var(--f-mono); white-space: nowrap; }
+.azb-table a { color: var(--accent); }
+.estado { display: inline-block; font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 999px; background: var(--surface-2); white-space: nowrap; }
+.en-app { font-family: var(--f-mono); font-size: 11.5px; color: var(--ok); white-space: nowrap; }
 .row-input { display: flex; gap: 8px; }
 .row-input input { flex: 1; min-width: 0; }
 .prop { display: grid; gap: 6px; padding: 8px 10px; border-radius: 6px; background: var(--surface-2); }
@@ -254,6 +279,36 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
       <button class="btn primary" id="az-sync-all" type="button" hidden></button>
     </div>
   </div>
+
+  <section class="az-bar" id="az-bar" aria-label="Filtros de Azure DevOps" hidden>
+    <div class="azf-row">
+      <div class="azf"><label for="azf-proj">Proyecto</label><select id="azf-proj"></select></div>
+      <div class="azf"><label for="azf-area">Ruta de área</label><select id="azf-area" disabled></select></div>
+      <div class="azf"><label for="azf-iter">Sprint (opcional)</label><select id="azf-iter" disabled></select></div>
+      <button class="btn" type="button" id="azf-board" disabled>Ver historias del tablero</button>
+    </div>
+    <div class="azf-row">
+      <span class="hint" id="azf-info"></span>
+      <div class="seg" role="group" aria-label="Qué historias mostrar">
+        <button type="button" data-vista="todas">Todas</button>
+        <button type="button" data-vista="area">De este proyecto y área</button>
+        <button type="button" data-vista="pendientes">Sin subir o con cambios</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="az-board" id="az-board" hidden>
+    <div class="azb-head">
+      <h2 id="azb-title">Historias en el tablero</h2>
+      <div class="azb-tools">
+        <label class="search" for="azb-q"><span aria-hidden="true">⌕</span><input id="azb-q" type="search" placeholder="Buscar en el tablero…" autocomplete="off"></label>
+        <select id="azb-estado" aria-label="Filtrar por estado"></select>
+        <button class="btn btn-sm" type="button" id="azb-reload">Actualizar</button>
+        <button class="btn btn-sm" type="button" id="azb-close">Cerrar</button>
+      </div>
+    </div>
+    <div class="table-scroll" id="azb-list"></div>
+  </section>
 
   <section class="ia-global" id="ia-global" hidden></section>
 
@@ -369,21 +424,13 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
     <div class="ed-top"><h3 id="az-title">Conexión con Azure DevOps</h3></div>
     <p class="note">Cada historia se crea como un elemento de trabajo en el tablero de tu proyecto, con sus mockups como adjuntos. Si cambias una historia y la vuelves a subir, se actualiza el <b>mismo</b> elemento y sus criterios de aceptación se reemplazan por completo, así no quedan criterios antiguos.</p>
     <div class="grid2">
-      <div class="field"><label for="az-org">Organización</label><input id="az-org" type="text" autocomplete="off" placeholder="miempresa o https://dev.azure.com/miempresa"></div>
-      <div class="field"><label for="az-proj">Proyecto</label><input id="az-proj" type="text" autocomplete="off" placeholder="Nombre del proyecto en Azure DevOps"></div>
-      <div class="field"><label for="az-type">Tipo de elemento de trabajo</label>
-        <select id="az-type">
-          <option value="User Story">User Story (proceso Agile)</option>
-          <option value="Product Backlog Item">Product Backlog Item (proceso Scrum)</option>
-          <option value="Issue">Issue (proceso Basic)</option>
-        </select></div>
-      <div class="field"><label for="az-area">Ruta de área (opcional)</label><input id="az-area" type="text" autocomplete="off" placeholder="Proyecto\Equipo"></div>
-      <div class="field full"><label for="az-iter">Iteración o sprint (opcional)</label><input id="az-iter" type="text" autocomplete="off" placeholder="Proyecto\Sprint 1"></div>
+      <div class="field full"><label for="az-org">Organización</label><input id="az-org" type="text" autocomplete="off" spellcheck="false" placeholder="miempresa o https://dev.azure.com/miempresa"></div>
       <div class="field full"><label for="az-pat">Token de acceso personal (PAT)</label>
         <input id="az-pat" type="password" autocomplete="off" spellcheck="false" placeholder="Pega aquí tu token de Azure DevOps">
-        <span class="hint">Créalo en Azure DevOps → <b>User settings</b> → <b>Personal access tokens</b>, con el permiso <b>Work Items: Read &amp; write</b>. Solo se envía a Azure DevOps.</span></div>
+        <span class="hint">Créalo en Azure DevOps → <b>User settings</b> → <b>Personal access tokens</b>, con los permisos <b>Work Items: Read &amp; write</b> y <b>Project and Team: Read</b>. Solo se envía a Azure DevOps.</span></div>
       <label class="check full"><input type="checkbox" id="az-remember"> Recordar el token en este navegador. Si no lo marcas, se olvida al cerrar la pestaña.</label>
     </div>
+    <p class="note">Después eliges el <b>proyecto</b>, la <b>ruta de área</b> y el <b>sprint</b> en los filtros de la página principal.</p>
     <p class="status" id="az-status" hidden></p>
     <div class="ed-foot">
       <button class="btn danger" type="button" id="az-forget">Olvidar token</button>
@@ -571,9 +618,10 @@ Notas o dependencias:
     $('#sub').textContent = `${plural(todas.length, 'historia', 'historias')} · ${plural(nCrit, 'criterio de aceptación', 'criterios de aceptación')}`;
     $('#xls').disabled = !todas.length;
     const s = q();
-    const lista = s ? todas.filter(h => [codigo(h), h.titulo, h.descripcion, ...(h.criterios || []).flatMap((c, i) => [caCodigo(i), c.texto])]
-      .some(x => String(x || '').toLowerCase().includes(s))) : todas;
-    $('#count').textContent = s ? `${lista.length} de ${todas.length} coinciden con «${$('#q').value.trim()}»` : '';
+    const visibles = todas.filter(pasaVista);
+    const lista = s ? visibles.filter(h => [codigo(h), h.titulo, h.descripcion, ...(h.criterios || []).flatMap((c, i) => [caCodigo(i), c.texto])]
+      .some(x => String(x || '').toLowerCase().includes(s))) : visibles;
+    $('#count').textContent = s || visibles.length !== todas.length ? `Mostrando ${lista.length} de ${todas.length}${s ? ` · búsqueda «${$('#q').value.trim()}»` : ''}` : '';
     renderAzBarra();
     renderIaBarra();
     renderIaGlobal();
@@ -584,7 +632,12 @@ Notas o dependencias:
         <button class="btn primary" type="button" data-new>+ Escribir la primera historia</button></div>`;
       return;
     }
-    if (!lista.length) { el.innerHTML = '<div class="empty">Ninguna historia coincide con la búsqueda.</div>'; return; }
+    if (!lista.length) {
+      el.innerHTML = `<div class="empty">${s ? 'Ninguna historia coincide con la búsqueda.'
+        : vista === 'area' ? `Ninguna historia de la aplicación está subida a ${esc(az.area || az.proyecto || 'este proyecto')}. Elige «Todas» para ver las demás.`
+        : 'Todas las historias están subidas y al día.'}</div>`;
+      return;
+    }
     el.innerHTML = lista.map(h => {
       const cs = h.criterios || [];
       const imgs = h.imagenes || [];
@@ -849,12 +902,16 @@ Notas o dependencias:
   // elemento: título, descripción y criterios se reemplazan (no quedan criterios antiguos) y los
   // mockups se sincronizan como adjuntos (se suben los nuevos y se quitan los que borraste).
   const AZ_KEY = 'historias-azure:v1', PAT_KEY = 'historias-azure-pat';
-  let az = { org: '', proyecto: '', tipo: 'User Story', area: '', iteracion: '' };
+  // org y token se piden en el diálogo; proyecto, área y sprint se eligen en los filtros de la página.
+  // tipo y tieneCA se detectan del proceso del proyecto (User Story / Product Backlog Item / Requirement / Issue).
+  let az = { org: '', proyecto: '', tipo: 'User Story', tieneCA: true, area: '', iteracion: '' };
   let pat = '';
   function cargarAz() {
     try { az = { ...az, ...JSON.parse(localStorage.getItem(AZ_KEY) || '{}') }; } catch (e) {}
+    if (az.tieneCA === undefined) az.tieneCA = az.tipo !== 'Issue';
     try { pat = sessionStorage.getItem(PAT_KEY) || localStorage.getItem(PAT_KEY) || ''; } catch (e) { pat = ''; }
   }
+  const guardarConfigAz = () => { try { localStorage.setItem(AZ_KEY, JSON.stringify(az)); } catch (e) {} };
   const azBase = (org = az.org) => {
     const s = String(org || '').trim().replace(/\/+$/, '');
     let m = s.match(/^(?:https?:\/\/)?([a-z0-9-]+)\.visualstudio\.com/i);
@@ -864,7 +921,8 @@ Notas o dependencias:
     return /^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(nombre) ? 'https://dev.azure.com/' + nombre : '';
   };
   const azProy = () => encodeURIComponent(az.proyecto.trim());
-  const azListo = () => !!(azBase() && az.proyecto.trim() && pat);
+  const azConectado = () => !!(azBase() && pat);
+  const azListo = () => azConectado() && !!az.proyecto.trim();
   const destino = () => azBase().toLowerCase() + '|' + az.proyecto.trim().toLowerCase();
   // nueva: aún no está en este proyecto · al-dia: igual que en Azure · cambios: se editó después de subirla
   const estadoAz = h => !h.azure || h.azure.destino !== destino() ? 'nueva' : h.azure.firma === firma(h) ? 'al-dia' : 'cambios';
@@ -916,8 +974,8 @@ Notas o dependencias:
     const mock = imgs.filter(m => adj[m.id]).map((m, i) => `<p><b>Mockup ${i + 1}: ${esc(m.nombre)}</b><br><img src="${esc(adj[m.id])}" alt="${esc(m.nombre)}"></p>`).join('');
     const desc = (h.descripcion ? `<div>${aHtml(h.descripcion)}</div>` : '') + (mock ? `<h3>Mockups</h3>${mock}` : '');
     const ops = [...opsQuitar, { op: 'add', path: '/fields/System.Title', value: h.titulo }];
-    if (az.tipo === 'Issue') {
-      // el proceso Basic no tiene campo de criterios: van al final de la descripción
+    if (!az.tieneCA) {
+      // el tipo no tiene campo de criterios (por ejemplo Issue del proceso Basic): van al final de la descripción
       ops.push({ op: 'add', path: '/fields/System.Description', value: desc + (h.criterios.length ? '<h3>Criterios de aceptación</h3>' + criteriosHtml(h.criterios) : '') });
     } else {
       ops.push({ op: 'add', path: '/fields/System.Description', value: desc });
@@ -942,8 +1000,9 @@ Notas o dependencias:
       data = await azFetch(`${azBase()}/${azProy()}/_apis/wit/workitems/$${encodeURIComponent(az.tipo)}?api-version=7.1`, { method: 'POST', headers, body: JSON.stringify(ops) });
     }
     const url = data && data._links && data._links.html && data._links.html.href;
+    const areaFinal = (data.fields && data.fields['System.AreaPath']) || (est === 'nueva' ? az.area.trim() || az.proyecto.trim() : (h.azure && h.azure.area) || '');
     h.azure = { id: data.id, url: /^https:\/\//.test(url || '') ? url : `${azBase()}/${azProy()}/_workitems/edit/${data.id}`,
-      destino: destino(), firma: firma(h), subido: new Date().toISOString(), adjuntos: adj };
+      destino: destino(), area: areaFinal, firma: firma(h), subido: new Date().toISOString(), adjuntos: adj };
     guardar();
     return est;
   }
@@ -962,12 +1021,15 @@ Notas o dependencias:
   let subiendo = false;
   function renderAzBarra() {
     const on = azListo();
-    $('#az-dot').classList.toggle('on', on);
-    $('#az-label').textContent = on ? `Azure: ${az.proyecto.trim()}` : 'Conectar Azure DevOps';
+    $('#az-dot').classList.toggle('on', azConectado());
+    $('#az-label').textContent = azConectado() ? `Azure: ${az.org.replace(/^https?:\/\/(dev\.azure\.com\/)?/i, '').replace(/\/+$/, '')}` : 'Conectar Azure DevOps';
+    $('#az-bar').hidden = !azConectado();
+    $('#azf-board').disabled = !on;
+    document.querySelectorAll('[data-vista]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.vista === vista)));
     const pend = historias.filter(h => estadoAz(h) !== 'al-dia').length;
     const b = $('#az-sync-all');
     b.hidden = !on || !pend || subiendo;
-    b.textContent = `Subir ${pend === 1 ? '1 pendiente' : pend + ' pendientes'} a Azure DevOps`;
+    b.textContent = `Subir ${pend === 1 ? '1 pendiente' : pend + ' pendientes'} a ${az.area ? az.area.split('\\').pop() : az.proyecto}`;
   }
   // antes de subir: avisa si hay ambigüedades importantes sin resolver o historias sin revisar
   async function puedeSubir(lista) {
@@ -991,7 +1053,8 @@ Notas o dependencias:
     return r === 'si';
   }
   async function subirVarias(lista) {
-    if (!azListo()) { abrirAz(); return; }
+    if (!azConectado()) { abrirAz(); return; }
+    if (!az.proyecto) { toast('Elige primero el proyecto de Azure DevOps en los filtros.'); $('#azf-proj').focus(); return; }
     if (subiendo || !lista.length) return;
     if (!(await puedeSubir(lista))) return;
     subiendo = true;
@@ -1019,8 +1082,7 @@ Notas o dependencias:
   const azDlg = $('#az-dialog');
   const azStatus = (msg, cls) => { const el = $('#az-status'); el.textContent = msg; el.className = 'status' + (cls ? ' ' + cls : ''); el.hidden = !msg; };
   function abrirAz() {
-    $('#az-org').value = az.org; $('#az-proj').value = az.proyecto; $('#az-type').value = az.tipo;
-    $('#az-area').value = az.area; $('#az-iter').value = az.iteracion;
+    $('#az-org').value = az.org;
     $('#az-pat').value = pat;
     let recordado = false; try { recordado = !!localStorage.getItem(PAT_KEY); } catch (e) {}
     $('#az-remember').checked = recordado;
@@ -1028,56 +1090,207 @@ Notas o dependencias:
     azDlg.showModal();
     (az.org ? $('#az-pat') : $('#az-org')).focus();
   }
+  // lee organización y token del diálogo; devuelve un mensaje si falta algo
   function leerAz() {
-    const nuevo = { org: $('#az-org').value.trim(), proyecto: $('#az-proj').value.trim(), tipo: $('#az-type').value,
-      area: $('#az-area').value.trim(), iteracion: $('#az-iter').value.trim() };
-    if (!azBase(nuevo.org)) return 'Escribe el nombre de la organización (por ejemplo «miempresa»).';
-    if (!nuevo.proyecto) return 'Escribe el nombre del proyecto.';
+    const org = $('#az-org').value.trim();
+    if (!azBase(org)) return 'Escribe el nombre de la organización (por ejemplo «miempresa»).';
     if (!$('#az-pat').value.trim()) return 'Pega tu token de acceso personal (PAT).';
-    az = nuevo; pat = $('#az-pat').value.trim();
+    if (azBase(org) !== azBase()) az = { ...az, org, proyecto: '', area: '', iteracion: '' }; // otra organización: se vuelve a elegir proyecto
+    else az.org = org;
+    pat = $('#az-pat').value.trim();
     return '';
   }
-  function guardarAz() {
-    try { localStorage.setItem(AZ_KEY, JSON.stringify(az)); } catch (e) {}
-    try {
-      sessionStorage.setItem(PAT_KEY, pat);
-      if ($('#az-remember').checked) localStorage.setItem(PAT_KEY, pat); else localStorage.removeItem(PAT_KEY);
-    } catch (e) {}
-  }
+  const listarProyectos = async () => ((await azFetch(`${azBase()}/_apis/projects?$top=500&api-version=7.1`)).value || []).map(p => p.name).sort((a, b) => a.localeCompare(b, 'es'));
   $('#az-open').addEventListener('click', abrirAz);
   $('#az-cancel').addEventListener('click', () => azDlg.close());
   $('#az-test').addEventListener('click', async () => {
+    const antes = { az: { ...az }, pat };
     const e0 = leerAz();
     if (e0) return azStatus(e0, 'bad');
     const btn = $('#az-test'); btn.disabled = true;
     azStatus('Probando la conexión…');
     try {
-      let p;
-      try { p = await azFetch(`${azBase()}/_apis/projects/${azProy()}?api-version=7.1`); }
-      catch (e) { if (e.status === 404) throw new Error(`No se encontró el proyecto «${az.proyecto}» en esa organización.`); throw e; }
-      let t;
-      try { t = await azFetch(`${azBase()}/${azProy()}/_apis/wit/workitemtypes/${encodeURIComponent(az.tipo)}?api-version=7.1`); }
-      catch (e) { if (e.status === 404) throw new Error(`El proyecto «${p.name}» no usa el tipo «${az.tipo}». Elige el de su proceso: Agile → User Story, Scrum → Product Backlog Item, Basic → Issue.`); throw e; }
-      azStatus(`Conexión correcta con el proyecto «${p.name}». Las historias se crearán como «${t.name}». Pulsa «Guardar conexión».`, 'ok');
-    } catch (e) { azStatus(e.message, 'bad'); }
-    finally { btn.disabled = false; }
+      const ps = await listarProyectos();
+      azStatus(ps.length ? `Conexión correcta: ${plural(ps.length, 'proyecto disponible', 'proyectos disponibles')}. Pulsa «Guardar conexión» y elige el proyecto en los filtros.`
+        : 'La conexión funciona, pero tu usuario no ve ningún proyecto en esa organización.', ps.length ? 'ok' : 'bad');
+    } catch (e) {
+      azStatus(e.status === 404 ? 'No se encontró esa organización. Revisa el nombre.' : e.message, 'bad');
+    } finally { az = antes.az; pat = antes.pat; btn.disabled = false; }
   });
-  $('#az-form').addEventListener('submit', ev => {
+  $('#az-form').addEventListener('submit', async ev => {
     ev.preventDefault();
     const e0 = leerAz();
     if (e0) return azStatus(e0, 'bad');
-    guardarAz();
+    guardarConfigAz();
+    try {
+      sessionStorage.setItem(PAT_KEY, pat);
+      if ($('#az-remember').checked) localStorage.setItem(PAT_KEY, pat); else localStorage.removeItem(PAT_KEY);
+    } catch (e) {}
     azDlg.close();
     render();
-    toast(`Conexión guardada: ${az.proyecto}.`);
+    toast('Conexión guardada. Elige el proyecto y la ruta de área en los filtros.');
+    await iniciarFiltros();
   });
   $('#az-forget').addEventListener('click', () => {
     pat = '';
     try { sessionStorage.removeItem(PAT_KEY); localStorage.removeItem(PAT_KEY); } catch (e) {}
     $('#az-pat').value = '';
-    azStatus('Token olvidado. La organización y el proyecto se mantienen; para subir de nuevo pega un token.', '');
+    azStatus('Token olvidado. La organización se mantiene; para usar Azure DevOps de nuevo pega un token.', '');
+    $('#az-board').hidden = true;
     render();
   });
+
+  // ---------- filtros de Azure DevOps: proyecto, ruta de área y sprint ----------
+  const cacheAz = {}; // proyecto → { areas, iteraciones }
+  const opcion = (v, t, sel) => `<option value="${esc(v)}"${sel ? ' selected' : ''}>${esc(t)}</option>`;
+  const infoAz = (msg) => { $('#azf-info').textContent = msg; };
+  // aplana el árbol de áreas o sprints en rutas «Proyecto\Equipo\Subequipo»
+  function aplanar(nodo, ruta = '', nivel = 0, res = []) {
+    const p = ruta ? `${ruta}\\${nodo.name}` : nodo.name;
+    res.push({ ruta: p, nombre: nodo.name, nivel, inicio: nodo.attributes && nodo.attributes.startDate, fin: nodo.attributes && nodo.attributes.finishDate });
+    (nodo.children || []).forEach(c => aplanar(c, p, nivel + 1, res));
+    return res;
+  }
+  async function iniciarFiltros() {
+    if (!azConectado()) return;
+    const sel = $('#azf-proj');
+    sel.innerHTML = opcion('', 'Cargando proyectos…');
+    try {
+      const ps = await listarProyectos();
+      sel.innerHTML = opcion('', ps.length ? 'Elige un proyecto' : 'No hay proyectos visibles') + ps.map(p => opcion(p, p, p === az.proyecto)).join('');
+      if (az.proyecto && !ps.includes(az.proyecto)) { az.proyecto = ''; az.area = ''; az.iteracion = ''; guardarConfigAz(); }
+      if (az.proyecto) await cargarProyecto(false); else { infoAz('Elige el proyecto donde se subirán las historias.'); pintarSelects(); }
+    } catch (e) {
+      sel.innerHTML = opcion('', 'No se pudieron cargar los proyectos');
+      infoAz(e.message);
+    }
+    render();
+  }
+  async function cargarProyecto(reiniciar) {
+    const proy = az.proyecto;
+    if (reiniciar) { az.area = ''; az.iteracion = ''; }
+    infoAz('Cargando áreas y sprints…');
+    pintarSelects(true);
+    try {
+      // tipo de elemento según el proceso del proyecto, y si tiene el campo de criterios de aceptación
+      const tipos = ((await azFetch(`${azBase()}/${azProy()}/_apis/wit/workitemtypes?api-version=7.1`)).value || []).map(t => t.name);
+      az.tipo = ['User Story', 'Product Backlog Item', 'Requirement', 'Issue'].find(t => tipos.includes(t)) || az.tipo;
+      const campos = ((await azFetch(`${azBase()}/${azProy()}/_apis/wit/workitemtypes/${encodeURIComponent(az.tipo)}/fields?api-version=7.1`)).value || []).map(f => f.referenceName);
+      az.tieneCA = campos.includes('Microsoft.VSTS.Common.AcceptanceCriteria');
+      if (!cacheAz[proy]) {
+        const [areas, iters] = await Promise.all([
+          azFetch(`${azBase()}/${azProy()}/_apis/wit/classificationnodes/Areas?$depth=10&api-version=7.1`),
+          azFetch(`${azBase()}/${azProy()}/_apis/wit/classificationnodes/Iterations?$depth=10&api-version=7.1`)
+        ]);
+        cacheAz[proy] = { areas: aplanar(areas), iteraciones: aplanar(iters).slice(1) };
+      }
+      if (proy !== az.proyecto) return; // se eligió otro proyecto mientras cargaba
+      if (az.area && !cacheAz[proy].areas.some(a => a.ruta === az.area)) az.area = '';
+      if (az.iteracion && !cacheAz[proy].iteraciones.some(a => a.ruta === az.iteracion)) az.iteracion = '';
+      guardarConfigAz();
+      pintarSelects();
+      infoAz(`Las historias se subirán como «${az.tipo}» a ${az.area || proy}${az.iteracion ? ' · ' + az.iteracion.split('\\').pop() : ''}.`);
+    } catch (e) { infoAz(e.message); pintarSelects(); }
+  }
+  function pintarSelects(cargando) {
+    const c = cacheAz[az.proyecto];
+    const sa = $('#azf-area'), si = $('#azf-iter');
+    if (!az.proyecto || !c || cargando) {
+      sa.innerHTML = opcion('', cargando ? 'Cargando…' : 'Elige primero un proyecto'); sa.disabled = true;
+      si.innerHTML = opcion('', cargando ? 'Cargando…' : 'Elige primero un proyecto'); si.disabled = true;
+      return;
+    }
+    sa.disabled = false; si.disabled = false;
+    sa.innerHTML = c.areas.map((a, i) => opcion(i ? a.ruta : '', `${'  '.repeat(a.nivel)}${a.nivel ? '└ ' : ''}${a.nombre}${i ? '' : ' (todo el proyecto)'}`, (i ? a.ruta : '') === az.area)).join('');
+    const hoyT = Date.now();
+    si.innerHTML = opcion('', 'Sin sprint (el predeterminado del proyecto)', !az.iteracion) + c.iteraciones.map(t => {
+      const actual = t.inicio && t.fin && Date.parse(t.inicio) <= hoyT && hoyT <= Date.parse(t.fin) + 864e5;
+      return opcion(t.ruta, `${'  '.repeat(Math.max(0, t.nivel - 1))}${t.nombre}${actual ? ' · actual' : ''}`, t.ruta === az.iteracion);
+    }).join('');
+  }
+  $('#azf-proj').addEventListener('change', async ev => {
+    az.proyecto = ev.target.value;
+    guardarConfigAz();
+    $('#az-board').hidden = true;
+    render();
+    if (az.proyecto) await cargarProyecto(true); else { pintarSelects(); infoAz('Elige el proyecto donde se subirán las historias.'); }
+    render();
+  });
+  $('#azf-area').addEventListener('change', ev => {
+    az.area = ev.target.value; guardarConfigAz();
+    infoAz(`Las historias se subirán como «${az.tipo}» a ${az.area || az.proyecto}${az.iteracion ? ' · ' + az.iteracion.split('\\').pop() : ''}.`);
+    render();
+    if (!$('#az-board').hidden) verTablero();
+  });
+  $('#azf-iter').addEventListener('change', ev => {
+    az.iteracion = ev.target.value; guardarConfigAz();
+    infoAz(`Las historias se subirán como «${az.tipo}» a ${az.area || az.proyecto}${az.iteracion ? ' · ' + az.iteracion.split('\\').pop() : ''}.`);
+  });
+
+  // filtro de las historias de la aplicación según el proyecto y el área elegidos
+  const VISTA_KEY = 'historias-vista';
+  let vista = 'todas';
+  try { const v = localStorage.getItem(VISTA_KEY); if (['todas', 'area', 'pendientes'].includes(v)) vista = v; } catch (e) {}
+  const enArea = h => !!(h.azure && h.azure.destino === destino() &&
+    (!az.area || String(h.azure.area || '').toLowerCase() === az.area.toLowerCase() || String(h.azure.area || '').toLowerCase().startsWith(az.area.toLowerCase() + '\\')));
+  const pasaVista = h => !azConectado() || vista === 'todas' ? true : vista === 'area' ? enArea(h) : estadoAz(h) !== 'al-dia';
+  document.querySelectorAll('[data-vista]').forEach(b => b.addEventListener('click', () => {
+    vista = b.dataset.vista;
+    try { localStorage.setItem(VISTA_KEY, vista); } catch (e) {}
+    render();
+  }));
+
+  // ---------- historias que ya están en el tablero de Azure DevOps ----------
+  let tablero = [];
+  const wiql = s => String(s).replace(/'/g, "''");
+  async function verTablero() {
+    const panel = $('#az-board');
+    panel.hidden = false;
+    $('#azb-title').textContent = `«${az.tipo}» en ${az.area || az.proyecto}`;
+    $('#azb-list').innerHTML = '<p class="note">Cargando el tablero…</p>';
+    try {
+      const query = `SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = @project AND [System.WorkItemType] = '${wiql(az.tipo)}'`
+        + (az.area ? ` AND [System.AreaPath] UNDER '${wiql(az.area)}'` : '') + ' ORDER BY [System.ChangedDate] DESC';
+      const r = await azFetch(`${azBase()}/${azProy()}/_apis/wit/wiql?$top=200&api-version=7.1`,
+        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query }) });
+      const ids = (r.workItems || []).map(w => w.id).slice(0, 200);
+      if (!ids.length) { tablero = []; return pintarTablero(); }
+      const campos = ['System.Id', 'System.Title', 'System.State', 'System.AssignedTo', 'System.AreaPath', 'System.IterationPath', 'System.Tags'].join(',');
+      const d = await azFetch(`${azBase()}/${azProy()}/_apis/wit/workitems?ids=${ids.join(',')}&fields=${campos}&api-version=7.1`);
+      const porId = new Map((d.value || []).map(w => [w.id, w]));
+      tablero = ids.map(id => porId.get(id)).filter(Boolean).map(w => ({
+        id: w.id, titulo: w.fields['System.Title'] || '', estado: w.fields['System.State'] || '',
+        asignado: (w.fields['System.AssignedTo'] && (w.fields['System.AssignedTo'].displayName || w.fields['System.AssignedTo'])) || '',
+        area: w.fields['System.AreaPath'] || '', sprint: w.fields['System.IterationPath'] || '', etiquetas: w.fields['System.Tags'] || '',
+        url: `${azBase()}/${azProy()}/_workitems/edit/${w.id}`
+      }));
+      const estados = [...new Set(tablero.map(t => t.estado))].sort();
+      $('#azb-estado').innerHTML = opcion('', 'Todos los estados') + estados.map(s => opcion(s, s)).join('');
+      pintarTablero();
+    } catch (e) { $('#azb-list').innerHTML = `<p class="status bad">${esc(e.message)}</p>`; }
+  }
+  function pintarTablero() {
+    const s = ($('#azb-q').value || '').trim().toLowerCase();
+    const est = $('#azb-estado').value;
+    const local = new Map(historias.filter(h => h.azure && h.azure.destino === destino()).map(h => [h.azure.id, h]));
+    const lista = tablero.filter(t => (!est || t.estado === est) && (!s || [t.id, t.titulo, t.asignado, t.etiquetas, t.sprint].some(x => String(x).toLowerCase().includes(s))));
+    if (!tablero.length) { $('#azb-list').innerHTML = `<p class="note">No hay elementos «${esc(az.tipo)}» en ${esc(az.area || az.proyecto)}.</p>`; return; }
+    $('#azb-list').innerHTML = `<p class="hint">${lista.length === tablero.length ? plural(tablero.length, 'elemento', 'elementos') : `${lista.length} de ${tablero.length} elementos`}${tablero.length >= 200 ? ' (se muestran los 200 más recientes)' : ''}</p>
+      <table class="azb-table"><thead><tr><th>ID</th><th>Título</th><th>Estado</th><th>Asignado a</th><th>Sprint</th><th>Área</th></tr></thead><tbody>
+      ${lista.map(t => { const h = local.get(t.id); return `<tr>
+        <td class="num"><a href="${esc(t.url)}" target="_blank" rel="noopener">#${t.id}</a></td>
+        <td>${esc(t.titulo)}${h ? `<br><span class="en-app">En la app: ${codigo(h)}</span>` : ''}</td>
+        <td><span class="estado">${esc(t.estado)}</span></td>
+        <td>${esc(t.asignado || '—')}</td>
+        <td>${esc(t.sprint.split('\\').slice(1).join(' › ') || '—')}</td>
+        <td>${esc(t.area.split('\\').slice(1).join(' › ') || '(raíz)')}</td></tr>`; }).join('')}
+      </tbody></table>`;
+  }
+  $('#azf-board').addEventListener('click', verTablero);
+  $('#azb-reload').addEventListener('click', verTablero);
+  $('#azb-close').addEventListener('click', () => { $('#az-board').hidden = true; });
+  $('#azb-q').addEventListener('input', pintarTablero);
+  $('#azb-estado').addEventListener('change', pintarTablero);
 
   // ---------- revisión de ambigüedades con IA (cualquier proveedor) ----------
   // Se llama a la IA elegida directamente desde el navegador, con la clave que pega el usuario.
@@ -1954,6 +2167,7 @@ Reglas:
   cargarAz();
   cargarIa();
   render();
+  if (azConectado()) iniciarFiltros();
 })();
 </script>
 </body>
