@@ -16,6 +16,12 @@ Es un único archivo (`index.html`). No necesita servidor ni base de datos.
 - **¿Cómo vamos?:** avance planificado frente a real, y cantidad de tareas por estado.
 - **Avance por fase.**
 - **Descargar Excel:** hoja *Cronograma* y hoja *Avance en el tiempo*.
+- **Métricas de todos los proyectos:**
+  - indicadores generales: proyectos, avance promedio, proyectos con retraso, tareas atrasadas y entregas a tiempo;
+  - avance de cada proyecto frente a lo planificado;
+  - estado de las tareas por proyecto;
+  - carga por responsable;
+  - lista de tareas atrasadas.
 - **Respaldo:** exporta e importa todos tus cronogramas en un archivo `.json`.
 - **Modo oscuro.**
 

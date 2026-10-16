@@ -337,6 +337,50 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
   .pct input { width: 48px; }
   .fields { grid-template-columns: 1fr; }
 }
+/* Vista de métricas de todos los proyectos */
+.view-proj { display: contents; }
+.view-seg { flex: none; }
+.port { display: grid; gap: 20px; }
+.port-head { display: grid; gap: 4px; }
+.port-title { margin: 0; font-family: var(--f-display); font-size: clamp(22px, 3.2vw, 32px); font-weight: 700; letter-spacing: -.01em; }
+.port-kpis { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.port-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; }
+.pf-list { display: grid; gap: 6px; }
+.pf-row { display: grid; grid-template-columns: minmax(120px, 190px) minmax(0, 1fr) auto; gap: 12px; align-items: center;
+  border: 0; background: transparent; text-align: left; padding: 6px 8px; margin: 0 -8px; border-radius: 6px; cursor: pointer; width: calc(100% + 16px); }
+.pf-row:hover { background: var(--surface-2); }
+.pf-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.pf-name small { display: block; font-weight: 400; color: var(--muted); font-size: 11.5px; }
+.pf-track { position: relative; height: 22px; border-radius: 4px; background: repeating-linear-gradient(to right, var(--grid) 0 1px, transparent 1px 25%), var(--surface-2); }
+.pf-fill { height: 100%; border-radius: 0 4px 4px 0; background: var(--accent); }
+.pf-in { display: block; text-align: right; padding-right: 7px; line-height: 22px; font-family: var(--f-mono); font-size: 12px; font-weight: 600; color: var(--on-bar); white-space: nowrap; }
+.pf-out { position: absolute; top: 0; line-height: 22px; font-family: var(--f-mono); font-size: 12px; font-weight: 600; white-space: nowrap; }
+.pf-tick { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--fg); border-radius: 1px; }
+.chip { font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px; white-space: nowrap; border: 1px solid currentColor; }
+.chip.ok { color: var(--ok); } .chip.warn { color: var(--warn); } .chip.bad { color: var(--bad); } .chip.muted { color: var(--muted); }
+.pf-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--muted); }
+.pf-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.pf-stack { display: flex; gap: 2px; height: 22px; border-radius: 4px; overflow: hidden; background: var(--surface-2); }
+.pf-seg { height: 100%; display: grid; place-items: center; font-family: var(--f-mono); font-size: 11px; font-weight: 600; color: var(--on-bar); min-width: 0; overflow: hidden; }
+.pf-count { font-family: var(--f-mono); font-size: 12px; color: var(--muted); white-space: nowrap; }
+.rs-row { display: grid; grid-template-columns: minmax(110px, 170px) minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 4px 0; }
+.rs-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+.rs-track { display: flex; gap: 2px; height: 16px; }
+.rs-seg { height: 100%; border-radius: 2px; }
+.rs-val { font-family: var(--f-mono); font-size: 12px; color: var(--muted); white-space: nowrap; }
+.rs-val b { color: var(--fg); font-weight: 500; }
+.rs-val .s-bad { font-weight: 600; }
+.pl-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.pl-table th { text-align: left; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+.pl-table td { padding: 7px 8px; border-bottom: 1px solid var(--grid); vertical-align: top; }
+.pl-table td.num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.pl-table tr:hover td { background: var(--surface-2); }
+.pl-table .proj-link { border: 0; background: none; padding: 0; color: var(--accent); cursor: pointer; text-align: left; font: inherit; }
+.pl-table .proj-link:hover { text-decoration: underline; }
+.table-scroll { overflow-x: auto; }
+.all-good { display: flex; align-items: center; gap: 10px; color: var(--ok); font-weight: 600; padding: 10px 0; }
+@media (max-width: 1100px) { .port-grid { grid-template-columns: minmax(0, 1fr); } .port-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .pf-row, .rs-row { grid-template-columns: minmax(0, 1fr); gap: 4px; } }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
@@ -348,12 +392,21 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
       <label for="proj-sel">Mis cronogramas</label>
       <div class="proj-sel-wrap"><select id="proj-sel"></select><span class="proj-count" id="proj-count"></span></div>
     </div>
+    <div class="seg view-seg" role="group" aria-label="Vista">
+      <button type="button" data-view="proj">Cronograma</button>
+      <button type="button" data-view="port">Métricas de todos los proyectos</button>
+    </div>
     <div class="proj-actions">
       <button class="btn" id="proj-new" type="button">+ Nuevo cronograma</button>
       <button class="btn" id="bk-export" type="button" title="Descarga un archivo con todos tus cronogramas">Exportar respaldo</button>
       <button class="btn" id="bk-import" type="button" title="Carga cronogramas desde un archivo de respaldo">Importar respaldo</button>
       <input type="file" id="bk-file" accept=".json,application/json" hidden>
       <button class="btn danger" id="proj-del" type="button">Eliminar este cronograma</button>
+      <label class="theme-switch" for="dark-toggle">
+        <input type="checkbox" id="dark-toggle" role="switch">
+        <span class="sw-track" aria-hidden="true"><span class="sw-thumb"></span></span>
+        <span>Modo oscuro</span>
+      </label>
     </div>
   </nav>
   <form class="np-form" id="nproj-form" hidden>
@@ -366,6 +419,35 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
     <span class="np-note">Se crea vacío. Los demás cronogramas no se modifican.</span>
   </form>
 
+  <section class="port" id="view-port" hidden>
+    <div class="port-head">
+      <span class="eyebrow">Métricas de todos los proyectos</span>
+      <h1 class="port-title">Portafolio de proyectos</h1>
+      <span class="sub" id="port-sub">Cargando…</span>
+    </div>
+    <section class="summary port-kpis" id="port-kpis" aria-label="Indicadores del portafolio"></section>
+    <div class="port-grid">
+      <div class="panel">
+        <div class="panel-head"><h2>Avance de cada proyecto</h2><span class="hint">barra = real · marca negra = debería ir hoy · clic para abrirlo</span></div>
+        <div id="port-avance"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>Estado de las tareas por proyecto</h2></div>
+        <div class="pf-legend" id="port-legend"></div>
+        <div id="port-estados"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>Carga por responsable</h2><span class="hint">tareas sin terminar en todos los proyectos</span></div>
+        <div id="port-resp"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>Tareas atrasadas</h2><span class="hint">pasaron su fecha «Hasta» sin llegar al 100%</span></div>
+        <div id="port-late"></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="view-proj" id="view-proj">
   <header class="top">
     <div class="top-text">
       <label class="eyebrow" for="title" id="title-label">Nombre del proyecto <span class="title-tip">· haz clic para cambiarlo</span></label>
@@ -378,12 +460,8 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
       </div>
     </div>
     <div class="actions">
-      <label class="theme-switch" for="dark-toggle">
-        <input type="checkbox" id="dark-toggle" role="switch">
-        <span class="sw-track" aria-hidden="true"><span class="sw-thumb"></span></span>
-        <span>Modo oscuro</span>
-      </label>
-      <button class="btn" id="xls" type="button" hidden><span class="xls-ico" aria-hidden="true">X</span>Descargar Excel</button>    </div>
+      <button class="btn" id="xls" type="button" hidden><span class="xls-ico" aria-hidden="true">X</span>Descargar Excel</button>
+    </div>
   </header>
 
   <div class="banner" id="banner" hidden></div>
@@ -425,6 +503,7 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
       <span id="edit-hint">Escribe el % en la columna Avance, haz clic en una tarea para editarla, en el nombre de una fase para renombrarla o en + para agregar una tarea a esa fase.</span>
     </div>
   </section>
+  </div>
 </div>
 
 <dialog id="editor" aria-labelledby="ed-title">
@@ -911,6 +990,7 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
     state.proyectos = snap.docs.map(d => ({ id: d.id, data: d.data() || {} }))
       .sort((a, b) => (a.data.orden || 0) - (b.data.orden || 0));
     state.proyectosListos = true;
+    if (state.view === 'port') loadPortfolio();
     if (!state.proyectos.length) {
       unsubs.forEach(u => u()); unsubs = [];
       state.pid = null; state.info = null; state.tareas = []; state.hist = []; state.mode = 'db';
@@ -966,7 +1046,7 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
     $('#proj-count').textContent = (state.proyectos.length === 1 ? '1 cronograma guardado' : state.proyectos.length + ' cronogramas guardados') + ' en este navegador';
     $('#proj-new').hidden = !state.canWrite;
     const del = $('#proj-del');
-    del.hidden = !state.canWrite || !state.pid;
+    del.hidden = !state.canWrite || !state.pid || state.view === 'port';
   }
 
   // avance manual en la tabla (se guarda tras una pausa)
@@ -1420,14 +1500,14 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
     d.classList.remove('armed');
     d.textContent = 'Eliminar este cronograma';
   }
-  $('#proj-sel').addEventListener('change', ev => { disarmDelete(); if (ev.target.value) selectProject(ev.target.value); });
+  $('#proj-sel').addEventListener('change', ev => { disarmDelete(); if (ev.target.value) { selectProject(ev.target.value); if (state.view === 'port') setView('proj'); } });
   $('#proj-new').addEventListener('click', () => { const f = $('#nproj-form'); if (f.hidden) openNewProject(); else f.hidden = true; });
   $('#nproj-cancel').addEventListener('click', () => { $('#nproj-form').hidden = true; });
   $('#nproj-name').addEventListener('keydown', ev => { if (ev.key === 'Escape') $('#nproj-form').hidden = true; });
   $('#nproj-form').addEventListener('submit', ev => {
     ev.preventDefault();
     disarmDelete();
-    if (createProject($('#nproj-name').value)) $('#nproj-form').hidden = true;
+    if (createProject($('#nproj-name').value)) { if (state.view === 'port') setView('proj'); $('#nproj-form').hidden = true; }
   });
   $('#proj-del').addEventListener('click', () => {
     const d = $('#proj-del');
@@ -1460,6 +1540,149 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
     try { localStorage.setItem(THEME_KEY, t); } catch (e) {}
   });
   if (mqDark && mqDark.addEventListener) mqDark.addEventListener('change', () => { $('#dark-toggle').checked = esOscuro(); });
+
+  // ---------- métricas de todos los proyectos ----------
+  const VIEW_KEY = 'cronograma-vista';
+  try { const v = localStorage.getItem(VIEW_KEY); if (v === 'port' || v === 'proj') state.view = v; } catch (e) {}
+  if (!state.view) state.view = 'proj';
+  state.port = null;
+  function setView(v) {
+    state.view = v;
+    try { localStorage.setItem(VIEW_KEY, v); } catch (e) {}
+    $('#view-port').hidden = v !== 'port';
+    $('#view-proj').hidden = v === 'port';
+    document.querySelectorAll('.view-seg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === v)));
+    $('#nproj-form').hidden = true;
+    renderProjects();
+    if (v === 'port') loadPortfolio();
+  }
+  document.querySelectorAll('.view-seg button').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
+
+  let portSeq = 0;
+  async function loadPortfolio() {
+    if (!db || state.view !== 'port') return;
+    const seq = ++portSeq;
+    const res = await Promise.all(state.proyectos.map(async p => {
+      let ts = [];
+      try {
+        const s = await db.collection('proyectos/' + p.id + '/tareas').get();
+        ts = s.docs.map(d => ({ id: d.id, ...d.data() })).filter(t => validDate(t.inicio) && validDate(t.fin));
+      } catch (e) {}
+      return { id: p.id, nombre: p.data.nombre || 'Sin nombre', info: p.data, ts };
+    }));
+    if (seq !== portSeq) return;
+    state.port = res;
+    renderPortfolio();
+  }
+
+  // estados en un orden que separa bien los colores vecinos
+  const ORDEN_STACK = ['done', 'riesgo', 'curso', 'late', 'pend'];
+  const veredicto = (ts, T) => {
+    if (!ts.length) return { cls: 'muted', txt: 'Sin tareas' };
+    if (ts.every(t => (t.avance || 0) >= 100)) return { cls: 'ok', txt: 'Terminado' };
+    const dev = actual(ts) - planned(ts, T);
+    return dev > -2 ? { cls: 'ok', txt: 'Al día' } : dev > -10 ? { cls: 'warn', txt: 'Leve retraso' } : { cls: 'bad', txt: 'Retraso importante' };
+  };
+  function renderPortfolio() {
+    const ps = state.port || [];
+    const T = parse(todayISO());
+    const conTareas = ps.filter(p => p.ts.length);
+    const todas = ps.flatMap(p => p.ts.map(t => ({ ...t, _p: p })));
+    $('#port-sub').textContent = `${ps.length === 1 ? '1 proyecto' : ps.length + ' proyectos'} · ${todas.length === 1 ? '1 tarea' : todas.length + ' tareas'} · Hoy es ${fmtLargo(T)}`;
+
+    // indicadores
+    const promedio = conTareas.length ? conTareas.reduce((a, p) => a + actual(p.ts), 0) / conTareas.length : 0;
+    const promPlan = conTareas.length ? conTareas.reduce((a, p) => a + planned(p.ts, T), 0) / conTareas.length : 0;
+    const conRetraso = conTareas.filter(p => ['warn', 'bad'].includes(veredicto(p.ts, T).cls)).length;
+    const atrasadas = todas.filter(t => status(t, T)[1] === 'bad');
+    const aTiempo = todas.filter(t => status(t, T)[1] === 'ok' && (t.avance || 0) >= 100).length;
+    const tarde = todas.filter(t => status(t, T)[1] === 'okl').length;
+    const cumpl = aTiempo + tarde ? aTiempo / (aTiempo + tarde) * 100 : null;
+    $('#port-kpis').innerHTML = `
+      <div class="stat"><span class="k">Proyectos</span><span class="v">${ps.length}</span><span class="n">${conTareas.length} con tareas</span></div>
+      <div class="stat"><span class="k">Avance promedio</span><span class="v">${pctTxt(promedio)}</span><span class="n">debería ir en ${pctTxt(promPlan)}</span></div>
+      <div class="stat"><span class="k">Proyectos con retraso</span><span class="v ${conRetraso ? 's-warn' : 's-ok'}">${conRetraso}</span><span class="n">de ${conTareas.length} con tareas</span></div>
+      <div class="stat"><span class="k">Tareas atrasadas</span><span class="v ${atrasadas.length ? 's-bad' : 's-ok'}">${atrasadas.length}</span><span class="n">de ${todas.length} tareas</span></div>
+      <div class="stat"><span class="k">Entregas a tiempo</span><span class="v ${cumpl == null ? '' : cumpl >= 80 ? 's-ok' : cumpl >= 60 ? 's-warn' : 's-bad'}">${cumpl == null ? '—' : pctTxt(cumpl)}</span>
+        <span class="n">${cumpl == null ? 'aún no hay tareas terminadas' : `${aTiempo} a tiempo · ${tarde} con atraso`}</span></div>`;
+
+    // avance de cada proyecto
+    $('#port-avance').innerHTML = ps.length ? `<div class="pf-list">${ps.map(p => {
+      const real = p.ts.length ? actual(p.ts) : 0, plan = p.ts.length ? planned(p.ts, T) : 0;
+      const v = veredicto(p.ts, T);
+      const w = Math.max(0.5, Math.min(100, real));
+      const label = pctTxt(real);
+      // si la marca del plan cae sobre el final de la barra, el % va afuera, después de ambas
+      const dentro = w >= 16 && Math.abs(Math.min(100, plan) - w) > 7;
+      const fuera = Math.max(w, Math.min(100, plan));
+      return `<button type="button" class="pf-row" data-open="${esc(p.id)}" title="${esc(p.nombre)}: va en ${label}, debería ir en ${pctTxt(plan)}. Clic para abrirlo.">
+        <span class="pf-name">${esc(p.nombre)}<small>${p.ts.length === 1 ? '1 tarea' : p.ts.length + ' tareas'}</small></span>
+        <span class="pf-track">${p.ts.length ? `<span class="pf-fill" style="display:block;width:${w}%">${dentro ? `<span class="pf-in">${label}</span>` : ''}</span>
+          ${dentro ? '' : `<span class="pf-out" style="left:calc(${fuera}% + 6px)${fuera > 84 ? ';left:auto;right:6px;color:var(--on-bar)' : ''}">${label}</span>`}
+          <span class="pf-tick" style="left:calc(${Math.min(100, plan)}% - 1px)"></span>` : ''}</span>
+        <span class="chip ${v.cls}">${v.txt}</span>
+      </button>`;
+    }).join('')}</div>` : '<p class="empty-note">Todavía no tienes proyectos.</p>';
+
+    // estado de las tareas por proyecto (barra apilada)
+    const est = Object.fromEntries(ESTADOS.map(e => [e.key, e]));
+    $('#port-legend').innerHTML = ORDEN_STACK.map(k => `<span><i class="st-ico" style="background:${est[k].color}" aria-hidden="true">${est[k].icono}</i>${est[k].nombre}</span>`).join('');
+    $('#port-estados').innerHTML = conTareas.length ? `<div class="pf-list">${conTareas.map(p => {
+      const cnt = Object.fromEntries(ORDEN_STACK.map(k => [k, 0]));
+      p.ts.forEach(t => cnt[grupoEstado(t, T)]++);
+      const n = p.ts.length;
+      const detalle = ORDEN_STACK.filter(k => cnt[k]).map(k => `${est[k].nombre}: ${cnt[k]}`).join(' · ');
+      return `<button type="button" class="pf-row" data-open="${esc(p.id)}" title="${esc(p.nombre)} — ${detalle}">
+        <span class="pf-name">${esc(p.nombre)}</span>
+        <span class="pf-stack">${ORDEN_STACK.filter(k => cnt[k]).map(k => `<span class="pf-seg" style="flex:${cnt[k]};background:${est[k].color}" title="${est[k].nombre}: ${cnt[k]} de ${n}">${cnt[k] / n >= 0.08 ? cnt[k] : ''}</span>`).join('')}</span>
+        <span class="pf-count">${n} ${n === 1 ? 'tarea' : 'tareas'}</span>
+      </button>`;
+    }).join('')}</div>` : '<p class="empty-note">Aparecerá cuando tus proyectos tengan tareas.</p>';
+
+    // carga por responsable (tareas sin terminar)
+    const porResp = new Map();
+    todas.filter(t => (t.avance || 0) < 100).forEach(t => {
+      const r = (t.responsable || '').trim() || 'Sin responsable';
+      const o = porResp.get(r) || { abiertas: 0, late: 0, proyectos: new Set() };
+      o.abiertas++; if (status(t, T)[1] === 'bad') o.late++; o.proyectos.add(t._p.nombre);
+      porResp.set(r, o);
+    });
+    const resp = [...porResp.entries()].sort((a, b) => b[1].abiertas - a[1].abiertas || b[1].late - a[1].late);
+    const maxA = resp.length ? resp[0][1].abiertas : 1;
+    const top = resp.slice(0, 10);
+    $('#port-resp').innerHTML = resp.length ? `
+      <div class="pf-legend" style="margin-bottom:8px"><span><i class="sw" style="background:var(--accent)"></i>En plazo</span><span><i class="sw" style="background:var(--bad)"></i>Atrasadas</span></div>
+      ${top.map(([r, o]) => `
+        <div class="rs-row" title="${esc(r)}: ${o.abiertas} sin terminar (${o.late} atrasadas) en ${[...o.proyectos].map(esc).join(', ')}">
+          <span class="rs-name">${esc(r)}</span>
+          <span class="rs-track" style="width:${o.abiertas / maxA * 100}%">
+            ${o.abiertas - o.late ? `<span class="rs-seg" style="flex:${o.abiertas - o.late};background:var(--accent)"></span>` : ''}
+            ${o.late ? `<span class="rs-seg" style="flex:${o.late};background:var(--bad)"></span>` : ''}
+          </span>
+          <span class="rs-val"><b>${o.abiertas}</b> ${o.abiertas === 1 ? 'abierta' : 'abiertas'}${o.late ? ` · <span class="s-bad">${o.late} atrasada${o.late === 1 ? '' : 's'}</span>` : ''}</span>
+        </div>`).join('')}
+      ${resp.length > top.length ? `<p class="empty-note" style="padding:6px 0 0">y ${resp.length - top.length} responsables más</p>` : ''}`
+      : '<p class="empty-note">No hay tareas sin terminar.</p>';
+
+    // tareas atrasadas
+    const late = atrasadas.map(t => ({ t, dl: status(t, T)[2] || 0 })).sort((a, b) => b.dl - a.dl);
+    $('#port-late').innerHTML = late.length ? `<div class="table-scroll"><table class="pl-table">
+      <thead><tr><th>Proyecto</th><th>Tarea</th><th>Responsable</th><th>Vencía</th><th style="text-align:right">Retraso</th><th style="text-align:right">Avance</th></tr></thead>
+      <tbody>${late.slice(0, 20).map(({ t, dl }) => `<tr>
+        <td><button type="button" class="proj-link" data-open="${esc(t._p.id)}">${esc(t._p.nombre)}</button></td>
+        <td>${esc(t.nombre)}</td><td>${esc(t.responsable || '—')}</td>
+        <td class="num">${dcol(t.fin)}</td><td class="num s-bad"><b>${diasTxt(dl)}</b></td><td class="num">${Math.round(t.avance || 0)}%</td>
+      </tr>`).join('')}</tbody></table></div>
+      ${late.length > 20 ? `<p class="empty-note" style="padding:6px 0 0">y ${late.length - 20} más</p>` : ''}`
+      : `<div class="all-good"><span class="vd-ico" style="background:var(--ok);width:28px;height:28px" aria-hidden="true">✓</span>Ninguna tarea atrasada en tus proyectos.</div>`;
+  }
+  $('#view-port').addEventListener('click', ev => {
+    const b = ev.target.closest('[data-open]');
+    if (!b) return;
+    selectProject(b.dataset.open);
+    setView('proj');
+    window.scrollTo({ top: 0 });
+  });
 
   // ---------- almacenamiento local (versión independiente) ----------
   // Base de datos mínima sobre localStorage con la misma forma que usa la página:
@@ -1560,6 +1783,7 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
   try {
     db = createLocalDB('cronograma-proyectos-ti:v1');
   } catch (e) { db = null; }
+  setView(state.view);
   if (!db) { state.mode = 'offline'; render(); }
   else db.collection('proyectos').onSnapshot(onProjects);
 })();
