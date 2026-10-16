@@ -36,8 +36,9 @@ html, body { margin: 0; }
   color-scheme: dark; }
 
 * { box-sizing: border-box; }
-body { background: var(--bg); color: var(--fg); font-family: var(--f-body); font-size: 14px; line-height: 1.45; }
-.wrap { max-width: 1100px; margin: 0 auto; padding-inline: 20px; padding-block: 24px 48px; display: grid; gap: 16px; }
+/* textos largos sin espacios (URLs, identificadores) se cortan en vez de ensanchar la página */
+body { background: var(--bg); color: var(--fg); font-family: var(--f-body); font-size: 14px; line-height: 1.45; overflow-wrap: break-word; }
+.wrap { max-width: 1100px; margin: 0 auto; padding-inline: 20px; padding-block: 24px 48px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
 button, input, select, textarea { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
@@ -76,8 +77,8 @@ h1 { margin: 0; font-family: var(--f-display); font-size: clamp(24px, 3.4vw, 34p
 .hint { color: var(--muted); font-size: 12.5px; }
 .note { color: var(--muted); font-size: 12.5px; margin: 0; }
 
-.list { display: grid; gap: 12px; }
-.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); display: grid; gap: 10px; padding: 14px 16px; }
+.list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 14px 16px; }
 .card-top { display: flex; gap: 10px 14px; align-items: baseline; flex-wrap: wrap; }
 .code { font-family: var(--f-mono); font-size: 12px; font-weight: 500; color: var(--accent); background: var(--accent-soft); padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
 .title { margin: 0; font-family: var(--f-display); font-size: 17px; font-weight: 600; flex: 1 1 260px; min-width: 0; text-wrap: balance; }
@@ -628,6 +629,8 @@ Notas o dependencias:
     return esc(txt.slice(0, i)) + '<mark>' + esc(txt.slice(i, i + s.length)) + '</mark>' + esc(txt.slice(i + s.length));
   };
   const abiertas = new Set();   // descripciones desplegadas
+  const critAbiertos = new Set(); // historias con todos sus criterios a la vista
+  const CA_VISIBLES = 6;          // con más criterios, el resto queda plegado en la tarjeta
   const iaAbiertas = new Set(); // paneles de revisión desplegados
   function render() {
     const todas = historias.slice().sort((a, b) => (a.numero || 0) - (b.numero || 0));
@@ -658,6 +661,9 @@ Notas o dependencias:
     el.innerHTML = lista.map(h => {
       const cs = h.criterios || [];
       const imgs = h.imagenes || [];
+      // si la búsqueda encuentra algo en un criterio plegado, se muestran todos
+      const ocultoCoincide = !!s && cs.slice(CA_VISIBLES).some(c => String(c.texto || '').toLowerCase().includes(s));
+      const verCa = cs.length > CA_VISIBLES && !critAbiertos.has(h.id) && !ocultoCoincide ? CA_VISIBLES : cs.length;
       let descHtml = '<p class="desc vacia">Sin descripción.</p>';
       if (h.descripcion) {
         const larga = h.descripcion.split('\n').length > 6 || h.descripcion.length > 600;
@@ -681,7 +687,8 @@ Notas o dependencias:
             <span class="thumb-name">${i + 1}. ${esc(m.nombre)}</span></div>`).join('')}</div></div>` : ''}
         <div class="crit">
           <span class="sec-sum">${cs.length ? plural(cs.length, 'criterio de aceptación', 'criterios de aceptación') : 'Sin criterios de aceptación todavía'}</span>
-          ${cs.length ? `<ol class="ca-list">${cs.map((c, i) => `<li class="ca"><span class="ca-code">${resaltar(caCodigo(i), s)}</span><p>${resaltar(c.texto, s)}</p></li>`).join('')}</ol>` : ''}
+          ${cs.length ? `<ol class="ca-list">${cs.slice(0, verCa).map((c, i) => `<li class="ca"><span class="ca-code">${resaltar(caCodigo(i), s)}</span><p>${resaltar(c.texto, s)}</p></li>`).join('')}</ol>` : ''}
+          ${cs.length > CA_VISIBLES && !(s && ocultoCoincide) ? `<button class="more" type="button" data-more-ca="${esc(h.id)}">${verCa < cs.length ? `Ver ${cs.length - verCa === 1 ? 'el otro criterio' : `los otros ${cs.length - verCa} criterios`}` : 'Ver menos criterios'}</button>` : ''}
         </div>
         ${iaFila(h)}
         ${azFila(h)}
@@ -1868,6 +1875,7 @@ Reglas:
     if ((b = t.closest('[data-edit]'))) return abrir(b.dataset.edit);
     if ((b = t.closest('[data-dup]'))) { const h = historias.find(x => x.id === b.dataset.dup); if (h) abrir(null, h); return; }
     if ((b = t.closest('[data-more]'))) { const id = b.dataset.more; abiertas.has(id) ? abiertas.delete(id) : abiertas.add(id); return render(); }
+    if ((b = t.closest('[data-more-ca]'))) { const id = b.dataset.moreCa; critAbiertos.has(id) ? critAbiertos.delete(id) : critAbiertos.add(id); return render(); }
     if ((b = t.closest('[data-ver]'))) { const [hid, mid] = b.dataset.ver.split('|'); return verImagen(hid, mid); }
     if ((b = t.closest('[data-az-up]'))) { const h = historias.find(x => x.id === b.dataset.azUp); if (h) subirVarias([h]); return; }
     if ((b = t.closest('[data-ia-rev]'))) { const h = historias.find(x => x.id === b.dataset.iaRev); if (h) revisar([h]); return; }

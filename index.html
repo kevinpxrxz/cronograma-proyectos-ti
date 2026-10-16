@@ -43,8 +43,9 @@ img { max-width: 100%; }
   color-scheme: dark; }
 
 * { box-sizing: border-box; }
-body { background: var(--bg); color: var(--fg); font-family: var(--f-body); font-size: 14px; line-height: 1.45; }
-.wrap { max-width: 1280px; margin: 0 auto; padding-inline: 20px; padding-block: 24px 48px; display: grid; gap: 20px; }
+/* textos largos sin espacios (URLs, identificadores) se cortan en vez de ensanchar la página */
+body { background: var(--bg); color: var(--fg); font-family: var(--f-body); font-size: 14px; line-height: 1.45; overflow-wrap: break-word; }
+.wrap { max-width: 1280px; margin: 0 auto; padding-inline: 20px; padding-block: 24px 48px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
 button, input, select { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
@@ -54,7 +55,9 @@ button, input, select { font: inherit; color: inherit; }
 .top-text { min-width: 0; flex: 1 1 360px; display: grid; gap: 4px; }
 .eyebrow { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
 .title-input { font-family: var(--f-display); font-weight: 700; font-size: clamp(22px, 3.2vw, 32px); letter-spacing: -.01em;
-  border: 1px solid transparent; background: transparent; border-radius: 6px; padding: 2px 6px; margin-left: -7px; width: 100%; text-overflow: ellipsis; }
+  border: 1px solid transparent; background: transparent; border-radius: 6px; padding: 2px 6px; margin-left: -7px; width: 100%;
+  /* textarea de una línea que crece si el nombre es largo */
+  display: block; resize: none; overflow: hidden; line-height: 1.2; color: inherit; overflow-wrap: anywhere; }
 .title-wrap { position: relative; display: flex; align-items: center; max-width: 720px; }
 .title-input:not(:disabled) { border: 1px dashed var(--line); padding-right: 34px; cursor: text; }
 .title-input:hover:not(:disabled) { border-color: var(--muted); background: var(--surface); }
@@ -163,11 +166,13 @@ button, input, select { font: inherit; color: inherit; }
 @media (max-width: 420px) { .st-row { grid-template-columns: 96px minmax(0, 1fr) 54px; } .cmp-row, .cmp-axis { grid-template-columns: 96px minmax(0, 1fr); } }
 .empty-note { color: var(--muted); margin: 0; padding: 24px 0; }
 
-.phases { display: grid; gap: 14px; }
-.ph { display: grid; gap: 5px; }
-.ph-top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
-.ph-top .nm { font-weight: 600; display: flex; align-items: center; gap: 7px; min-width: 0; }
-.ph-top .nm span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.phases { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.ph { display: grid; grid-template-columns: minmax(0, 1fr); gap: 5px; min-width: 0; }
+.ph-top { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; min-width: 0; }
+.ph-top .nm { font-weight: 600; display: flex; align-items: flex-start; gap: 7px; min-width: 0; }
+.ph-top .nm .pdot { margin-top: 5px; }
+/* nombres largos: pasan a otra línea en vez de cortarse */
+.ph-top .nm span { overflow-wrap: anywhere; line-height: 1.3; }
 .ph-top .vals { font-family: var(--f-mono); font-size: 12px; color: var(--muted); white-space: nowrap; }
 .ph-top .vals b { color: var(--fg); font-weight: 500; }
 .ph-track { position: relative; height: 8px; border-radius: 4px; background: var(--surface-2); }
@@ -186,7 +191,7 @@ button, input, select { font: inherit; color: inherit; }
 .gantt-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; }
 .gantt { --leftw: 100%; position: relative; min-width: 100%; }
 .gantt .g-left { position: static; border-right: 0; }
-.ph-input { font: inherit; font-weight: 600; min-width: 0; width: 100%; max-width: 320px; border: 1px solid transparent; background: transparent;
+.ph-input { font: inherit; font-weight: 600; min-width: 0; width: 100%; max-width: 560px; border: 1px solid transparent; background: transparent;
   border-radius: 5px; padding: 3px 6px; margin-left: -7px; text-overflow: ellipsis; cursor: text; }
 .ph-input:hover { border-color: var(--line); background: var(--surface); }
 .ph-add { flex: none; width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--accent); background: var(--surface); color: var(--accent);
@@ -244,6 +249,10 @@ button, input, select { font: inherit; color: inherit; }
 .la-icon { width: 20px; height: 20px; border-radius: 50%; background: var(--bad); color: var(--surface); display: inline-grid; place-items: center; font-size: 13px; font-weight: 700; }
 .late-alert ul { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
 .late-alert li b { color: var(--bad); }
+.late-alert li { overflow-wrap: anywhere; }
+.la-more summary { cursor: pointer; font-weight: 600; color: var(--bad); font-size: 13px; width: fit-content; }
+.la-more[open] summary { margin-bottom: 6px; }
+.la-more ul { max-height: 320px; overflow-y: auto; }
 .ed-warn { white-space: pre-line; margin: 0; font-size: 13px; color: var(--bad); background: color-mix(in srgb, var(--bad) 8%, var(--surface)); padding: 8px 10px; border-radius: 6px; }
 .dcol { flex: none; width: 96px; font-family: var(--f-mono); font-variant-numeric: tabular-nums; font-size: 12.5px; white-space: nowrap; }
 .dcol.days { width: 64px; text-align: right; color: var(--muted); }
@@ -278,14 +287,17 @@ button, input, select { font: inherit; color: inherit; }
 .phbar::before { left: 0; border-right: 6px solid transparent; }
 .phbar::after { right: 0; border-left: 6px solid transparent; }
 
-.g-row.task .g-left, .g-row.task .g-time { height: 44px; }
+/* la fila crece si el nombre, el responsable o el estado no caben en una línea */
+.g-row.task .g-left, .g-row.task .g-time { min-height: 44px; }
+.g-row.task .g-left { padding-top: 3px; padding-bottom: 3px; }
 .t-name { flex: 1; min-width: 0; display: grid; grid-template-columns: auto 1fr; column-gap: 8px; align-items: center; text-align: left;
   border: 0; background: transparent; padding: 4px 0; cursor: pointer; }
 div.t-name { cursor: default; }
 .t-name .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; grid-row: span 2; }
-.t-name .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
-.t-name .meta { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--muted); }
-.t-name .meta b { font-weight: 600; }
+.t-name .nm { overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2;
+  overflow-wrap: anywhere; font-weight: 500; line-height: 1.3; }
+.t-name .meta { overflow-wrap: anywhere; font-size: 12px; color: var(--muted); line-height: 1.5; }
+.t-name .meta b { font-weight: 600; display: inline-block; max-width: 100%; }
 button.t-name:hover .nm { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
 .pct { display: flex; align-items: center; justify-content: flex-end; gap: 2px; flex: none; width: 74px; font-family: var(--f-mono); color: var(--muted); font-size: 12px; }
 .period { display: grid; gap: 2px; font-family: var(--f-mono); font-variant-numeric: tabular-nums; font-size: 15px; }
@@ -398,9 +410,19 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
 .pl-table .proj-link { border: 0; background: none; padding: 0; color: var(--accent); cursor: pointer; text-align: left; font: inherit; }
 .pl-table .proj-link:hover { text-decoration: underline; }
 .table-scroll { overflow-x: auto; }
+/* que una tabla ancha se desplace dentro de su panel y no ensanche la página */
+.panel, .panel > * { min-width: 0; }
+.pl-table td { overflow-wrap: break-word; }
+.pl-table td:first-child { min-width: 130px; }
+.pl-table td:nth-child(2) { min-width: 180px; }
+.pl-table td:nth-child(3) { min-width: 120px; }
 .all-good { display: flex; align-items: center; gap: 10px; color: var(--ok); font-weight: 600; padding: 10px 0; }
-@media (max-width: 1100px) { .port-grid { grid-template-columns: minmax(0, 1fr); } .port-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 520px) { .pf-row, .rs-row { grid-template-columns: minmax(0, 1fr); gap: 4px; } }
+@media (max-width: 1100px) { .port-grid { grid-template-columns: minmax(0, 1fr); } .port-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .port-kpis .stat:last-child:nth-child(odd) { grid-column: 1 / -1; } }
+@media (max-width: 520px) { .pf-row, .rs-row { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  /* en una sola columna hay espacio: el nombre completo en vez de cortarlo */
+  .pf-name, .rs-name { white-space: normal; overflow-wrap: anywhere; }
+  .pf-row > .chip { justify-self: start; } }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
@@ -474,7 +496,7 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
   <header class="top">
     <div class="top-text">
       <label class="eyebrow" for="title" id="title-label">Nombre del proyecto <span class="title-tip">· haz clic para cambiarlo</span></label>
-      <div class="title-wrap"><input id="title" class="title-input" type="text" value="Cronograma del proyecto" maxlength="120" placeholder="Escribe el nombre del proyecto"><span class="pencil" aria-hidden="true">✎</span></div>
+      <div class="title-wrap"><textarea id="title" class="title-input" rows="1" maxlength="160" spellcheck="false" placeholder="Escribe el nombre del proyecto">Cronograma del proyecto</textarea><span class="pencil" aria-hidden="true">✎</span></div>
       <div class="period-edit">
         <div class="pe-field"><label for="p-inicio">Inicio del proyecto</label><input type="date" id="p-inicio"></div>
         <span class="pe-arrow" aria-hidden="true">→</span>
@@ -703,6 +725,7 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
   function renderHeader(list, T) {
     const ti = $('#title');
     if (document.activeElement !== ti) ti.value = (state.info && state.info.nombre) || 'Cronograma del proyecto';
+    ajustarTitulo();
     const sinProyecto = !!db && !state.pid;
     ti.disabled = !state.canWrite || sinProyecto;
     $('#title-label').querySelector('.title-tip').hidden = !state.canWrite || sinProyecto;
@@ -876,13 +899,16 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
     const alerta = $('#late-alert');
     if (atrasadas.length) {
       alerta.hidden = false;
+      // con muchas atrasadas se muestran las 5 más críticas y el resto queda plegado
+      const abierta = !!alerta.querySelector('details[open]');
+      const orden = atrasadas.map(t => ({ t, dl: status(t, T)[2] || 0 })).sort((a, b) => b.dl - a.dl);
+      const item = ({ t, dl }) => `<li><strong>${esc(t.nombre)}</strong> — vencía el ${dcol(t.fin)} · va en ${Math.round(t.avance || 0)}% · <b>${diasTxt(dl)} de retraso</b>${t.responsable ? ' · ' + esc(t.responsable) : ''}</li>`;
+      const MAX = 5, resto = orden.slice(MAX);
       alerta.innerHTML = `<div class="la-title"><span class="la-icon" aria-hidden="true">!</span>
           ${atrasadas.length === 1 ? '1 tarea atrasada' : atrasadas.length + ' tareas atrasadas'}
-          <span class="la-sub">Pasó su fecha «Hasta» y no llegaron al 100%.</span></div>
-        <ul>${atrasadas.map(t => {
-          const dl = status(t, T)[2];
-          return `<li><strong>${esc(t.nombre)}</strong> — vencía el ${dcol(t.fin)} · va en ${Math.round(t.avance || 0)}% · <b>${diasTxt(dl)} de retraso</b>${t.responsable ? ' · ' + esc(t.responsable) : ''}</li>`;
-        }).join('')}</ul>`;
+          <span class="la-sub">Pasó su fecha «Hasta» y no llegaron al 100%.${resto.length ? ' Primero las de más retraso.' : ''}</span></div>
+        <ul>${orden.slice(0, MAX).map(item).join('')}</ul>
+        ${resto.length ? `<details class="la-more"${abierta ? ' open' : ''}><summary>Ver ${resto.length === 1 ? 'la otra tarea atrasada' : `las otras ${resto.length} tareas atrasadas`}</summary><ul>${resto.map(item).join('')}</ul></details>` : ''}`;
     } else {
       alerta.hidden = true;
     }
@@ -1184,7 +1210,7 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
   });
 
   $('#title').addEventListener('change', () => {
-    const nombre = $('#title').value.trim() || 'Cronograma del proyecto';
+    const nombre = $('#title').value.replace(/\s+/g, ' ').trim() || 'Cronograma del proyecto';
     $('#title').value = nombre;
     state.info = { ...(state.info || {}), nombre };
     saveInfo();
@@ -1385,7 +1411,15 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
     }
   };
   $('#xls').hidden = false;
-  $('#title').addEventListener('keydown', ev => { if (ev.key === 'Enter') ev.target.blur(); });
+  $('#title').addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); ev.target.blur(); } });
+  // el nombre del proyecto crece en altura para que los nombres largos se lean completos
+  function ajustarTitulo() {
+    const t = $('#title');
+    t.style.height = 'auto';
+    if (t.scrollHeight) t.style.height = t.scrollHeight + 'px'; // oculto (vista de métricas) mide 0: se ajusta al volver
+  }
+  $('#title').addEventListener('input', ajustarTitulo);
+  window.addEventListener('resize', ajustarTitulo);
 
   // periodo del proyecto (inicio / fin)
   function onPeriodo(ev) {
@@ -1619,7 +1653,7 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
     document.querySelectorAll('.view-seg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === v)));
     $('#nproj-form').hidden = true;
     renderProjects();
-    if (v === 'port') loadPortfolio();
+    if (v === 'port') loadPortfolio(); else ajustarTitulo();
   }
   document.querySelectorAll('.view-seg button').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
 
