@@ -6,3 +6,6 @@ Thumbs.db
 desktop.ini
 .DS_Store
 .claude/
+
+# Paquete para llevar el proyecto a otra computadora
+*.zip
