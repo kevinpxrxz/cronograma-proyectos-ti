@@ -7,6 +7,16 @@ Es un único archivo (`index.html`). No necesita servidor ni base de datos.
 ## Funciones
 
 - **Varios cronogramas:** crea, cambia y elimina cronogramas. Cada uno guarda sus propias fases y tareas.
+- **Importar desde Azure DevOps:** con la organización y un token (si ya te conectaste en la aplicación de historias, se reutilizan), eliges proyecto, ruta de área y qué traer: historias, tareas y bugs. El cronograma se arma solo:
+  - **responsable:** el *Asignado a* de cada elemento;
+  - **fechas:** las de inicio y fin del elemento o, si no tiene, las de su sprint;
+  - **avance:**
+    - según la categoría del estado: *Nuevo* 0%, *En progreso* según el trabajo completado y restante, *Resuelto* 90%, *Hecho/Cerrado* 100% con su fecha real de cierre;
+    - las historias abiertas toman el promedio de sus tareas;
+    - lo eliminado no se trae;
+  - **fases:** por sprint, por Feature/Épica o por historia de usuario.
+
+  **Sincronizar con Azure** vuelve a traer todo: actualiza lo que cambió, agrega lo nuevo y quita lo que se eliminó en Azure, sin duplicar el cronograma. Las tareas que agregues a mano en ese cronograma no se tocan.
 - **Periodo del proyecto:** fecha de inicio y de fin. Avisa si una tarea queda fuera del periodo.
 - **Fases libres:** créalas, renómbralas y agrega tareas con el botón **+** de cada fase.
 - **Avance manual por tarea**, con:

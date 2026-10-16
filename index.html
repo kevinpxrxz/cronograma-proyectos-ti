@@ -203,6 +203,23 @@ button, input, select { font: inherit; color: inherit; }
 .app-name { font-family: var(--f-display); font-weight: 700; font-size: 13px; letter-spacing: .04em; color: var(--muted); }
 .proj-pick { display: grid; gap: 6px; min-width: 0; flex: 1 1 320px; }
 .proj-pick .proj-actions { margin-top: 2px; }
+/* importación desde Azure DevOps */
+.az-imp { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); color: var(--accent); }
+.az-vinc { font-size: 12.5px; color: var(--muted); }
+.az-vinc b { color: var(--fg); font-weight: 600; }
+.azi-dialog { width: min(680px, calc(100vw - 32px)); }
+.azi-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+.azi-grid .full { grid-column: 1 / -1; }
+.azi-grid select, .azi-grid input[type="text"], .azi-grid input[type="password"] { width: 100%; min-width: 0; border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; background: var(--surface); }
+.azi-grid select:focus, .azi-grid input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 2px var(--accent-soft); }
+.azi-tipos { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+.lbl { font-size: 12px; font-weight: 600; color: var(--muted); }
+.note { margin: 0; color: var(--muted); font-size: 13px; }
+.hint { color: var(--muted); font-size: 12.5px; margin: 0; }
+.status { margin: 0; padding: 9px 12px; border-radius: 6px; font-size: 13px; background: var(--surface-2); }
+.status.ok { color: var(--ok); background: color-mix(in srgb, var(--ok) 10%, var(--surface)); }
+.status.bad { color: var(--bad); background: color-mix(in srgb, var(--bad) 9%, var(--surface)); }
+@media (max-width: 560px) { .azi-grid { grid-template-columns: minmax(0, 1fr); } }
 .proj-pick label { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
 .proj-sel-wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; min-width: 0; }
 .proj-sel-wrap select { font-weight: 600; font-size: 15px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 6px;
@@ -402,8 +419,11 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
     <div class="proj-pick">
       <label for="proj-sel">Mis cronogramas</label>
       <div class="proj-sel-wrap"><select id="proj-sel"></select><span class="proj-count" id="proj-count"></span></div>
+      <span class="az-vinc" id="az-vinc" hidden></span>
       <div class="proj-actions">
         <button class="btn" id="proj-new" type="button">+ Nuevo cronograma</button>
+        <button class="btn az-imp" id="azi-open" type="button">Importar desde Azure DevOps</button>
+        <button class="btn primary" id="azi-sync" type="button" hidden>Sincronizar con Azure</button>
         <button class="btn danger" id="proj-del" type="button">Eliminar este cronograma</button>
       </div>
     </div>
@@ -508,6 +528,39 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
   </section>
   </div>
 </div>
+
+<dialog id="azi-dialog" class="azi-dialog" aria-labelledby="azi-title">
+  <form class="ed" id="azi-form" novalidate>
+    <h3 id="azi-title">Importar desde Azure DevOps</h3>
+    <p class="note">Trae las historias, tareas y bugs de un proyecto de Azure DevOps con su responsable, sus fechas y su avance, y arma el cronograma. Después puedes pulsar <b>Sincronizar con Azure</b> cuando quieras para actualizarlo.</p>
+    <div class="azi-grid">
+      <div class="field"><label for="azi-org">Organización</label><input id="azi-org" type="text" autocomplete="off" spellcheck="false" placeholder="miempresa o https://dev.azure.com/miempresa"></div>
+      <div class="field"><label for="azi-pat">Token (PAT)</label><input id="azi-pat" type="password" autocomplete="off" spellcheck="false" placeholder="Token con permiso de lectura de Work Items"></div>
+      <label class="check full"><input type="checkbox" id="azi-remember"> Recordar el token en este navegador</label>
+      <div class="full"><button class="btn" type="button" id="azi-connect">Conectar y cargar proyectos</button></div>
+      <div class="field"><label for="azi-proj">Proyecto</label><select id="azi-proj" disabled><option value="">Conéctate primero</option></select></div>
+      <div class="field"><label for="azi-area">Ruta de área</label><select id="azi-area" disabled><option value="">Elige primero un proyecto</option></select></div>
+      <div class="field full"><label for="azi-group">Fases del cronograma</label>
+        <select id="azi-group">
+          <option value="sprint">Por sprint (iteración)</option>
+          <option value="padre">Por Feature o Épica</option>
+          <option value="historia">Por historia de usuario (cada historia con sus tareas)</option>
+        </select></div>
+      <div class="field full"><span class="lbl">Qué traer</span>
+        <div class="azi-tipos">
+          <label class="check"><input type="checkbox" id="azi-t-hu" checked> Historias de usuario</label>
+          <label class="check"><input type="checkbox" id="azi-t-task" checked> Tareas</label>
+          <label class="check"><input type="checkbox" id="azi-t-bug"> Bugs</label>
+        </div></div>
+    </div>
+    <p class="status" id="azi-status" hidden></p>
+    <p class="hint">Lo importado se actualiza con cada sincronización: el avance, las fechas y el responsable vienen de Azure.</p>
+    <div class="ed-foot"><div class="right">
+      <button class="btn" type="button" id="azi-cancel">Cancelar</button>
+      <button class="btn primary" type="submit" id="azi-go" disabled>Importar</button>
+    </div></div>
+  </form>
+</dialog>
 
 <dialog id="editor" aria-labelledby="ed-title">
   <form class="ed" id="ed-form" novalidate>
@@ -1048,6 +1101,15 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
     sel.disabled = !state.proyectos.length;
     $('#proj-count').textContent = (state.proyectos.length === 1 ? '1 cronograma guardado' : state.proyectos.length + ' cronogramas guardados') + ' en este navegador';
     $('#proj-new').hidden = !state.canWrite;
+    const az = state.info && state.info.azure;
+    $('#azi-sync').hidden = !az || state.view === 'port';
+    const vinc = $('#az-vinc');
+    vinc.hidden = !az || state.view === 'port';
+    if (az) {
+      const f = new Date(az.sincronizado);
+      const cuando = isNaN(f) ? '' : ` · sincronizado el ${f.getDate()} ${MESES[f.getMonth()]} ${String(f.getHours()).padStart(2, '0')}:${String(f.getMinutes()).padStart(2, '0')}`;
+      vinc.innerHTML = `Vinculado a Azure DevOps: <b>${esc(az.area ? az.area.split('\\').join(' › ') : az.proyecto)}</b>${cuando}`;
+    }
     const del = $('#proj-del');
     del.hidden = !state.canWrite || !state.pid || state.view === 'port';
   }
@@ -1751,10 +1813,285 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
     return {
       doc: docRef, collection: colRef,
       exportAll: () => clone(store),
-      importAll: obj => { Object.assign(store, clone(obj)); persist(); listeners.forEach(l => queueMicrotask(() => emit(l))); }
+      importAll: obj => { Object.assign(store, clone(obj)); persist(); listeners.forEach(l => queueMicrotask(() => emit(l))); },
+      // guarda y borra muchos documentos de una vez (una sola escritura y un solo aviso)
+      lote: ({ sets = {}, deletes = [] }) => {
+        deletes.forEach(p => { delete store[p]; });
+        Object.entries(sets).forEach(([p, v]) => { store[p] = clone(v); });
+        persist();
+        listeners.forEach(l => queueMicrotask(() => emit(l)));
+      },
+      claves: prefijo => Object.keys(store).filter(k => k.startsWith(prefijo))
     };
   }
 
+
+  // ---------- importar y sincronizar desde Azure DevOps ----------
+  // Usa la misma conexión que la aplicación de historias (mismo sitio): organización y token.
+  // Cada elemento de Azure se guarda como tarea «az-<id>», así al sincronizar se actualiza en vez de duplicarse.
+  const AZ_CFG = 'historias-azure:v1', AZ_PAT = 'historias-azure-pat';
+  const azCfg = () => { try { return JSON.parse(localStorage.getItem(AZ_CFG) || '{}') || {}; } catch (e) { return {}; } };
+  const azPat = () => { try { return sessionStorage.getItem(AZ_PAT) || localStorage.getItem(AZ_PAT) || ''; } catch (e) { return ''; } };
+  const azBaseDe = org => {
+    const s = String(org || '').trim().replace(/\/+$/, '');
+    let m = s.match(/^(?:https?:\/\/)?([a-z0-9-]+)\.visualstudio\.com/i);
+    if (m) return 'https://' + m[1] + '.visualstudio.com';
+    m = s.match(/dev\.azure\.com\/([^\/?#]+)/i);
+    const nombre = m ? m[1] : s.replace(/^https?:\/\//i, '');
+    return /^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(nombre) ? 'https://dev.azure.com/' + nombre : '';
+  };
+  async function azGet(base, pat, ruta, opts = {}) {
+    let res;
+    try { res = await fetch(base + ruta, { ...opts, headers: { 'Authorization': 'Basic ' + btoa(':' + pat), 'Accept': 'application/json', ...(opts.headers || {}) } }); }
+    catch (e) { throw new Error('No se pudo conectar con Azure DevOps. Revisa el nombre de la organización y tu conexión a internet.'); }
+    if (res.status === 401 || res.status === 203) throw new Error('Azure DevOps rechazó el token: puede estar mal copiado, vencido o sin permiso de lectura de Work Items.');
+    if (res.status === 403) throw new Error('Tu usuario no tiene permiso para leer ese proyecto.');
+    const txt = await res.text();
+    let data = null;
+    try { data = txt ? JSON.parse(txt) : null; } catch (e) { throw new Error('Azure DevOps respondió algo inesperado. Revisa la organización y el token.'); }
+    if (!res.ok) { const err = new Error(data && data.message ? data.message : 'Azure DevOps respondió con el error ' + res.status + '.'); err.status = res.status; throw err; }
+    return data;
+  }
+  const wq = s => String(s).replace(/'/g, "''");
+  const dia = s => s ? String(s).slice(0, 10) : null;
+  const CAMPOS = ['System.Id', 'System.Title', 'System.WorkItemType', 'System.State', 'System.AssignedTo', 'System.IterationPath', 'System.AreaPath',
+    'System.Parent', 'System.CreatedDate', 'System.ChangedDate'];
+  const CAMPOS_FECHAS = ['Microsoft.VSTS.Scheduling.StartDate', 'Microsoft.VSTS.Scheduling.TargetDate', 'Microsoft.VSTS.Scheduling.FinishDate',
+    'Microsoft.VSTS.Scheduling.DueDate', 'Microsoft.VSTS.Common.ClosedDate', 'Microsoft.VSTS.Common.StateChangeDate',
+    'Microsoft.VSTS.Scheduling.CompletedWork', 'Microsoft.VSTS.Scheduling.RemainingWork'];
+  const PREFIJO = { 'User Story': 'HU', 'Product Backlog Item': 'HU', 'Requirement': 'HU', 'Issue': 'HU', 'Task': 'Tarea', 'Bug': 'Bug' };
+
+  // lee el proyecto de Azure y devuelve las tareas del cronograma
+  async function leerAzure(cfg, progreso) {
+    const base = azBaseDe(cfg.org), pat = azPat(), proy = encodeURIComponent(cfg.proyecto);
+    const G = (ruta, o) => azGet(base, pat, ruta, o);
+    progreso('Leyendo la configuración del proyecto…');
+    const tiposProy = ((await G(`/${proy}/_apis/wit/workitemtypes?api-version=7.1`)).value || []).map(t => t.name);
+    const tipoHU = ['User Story', 'Product Backlog Item', 'Requirement', 'Issue'].find(t => tiposProy.includes(t));
+    const tipos = [];
+    if (cfg.tipos.hu && tipoHU) tipos.push(tipoHU);
+    if (cfg.tipos.task && tiposProy.includes('Task')) tipos.push('Task');
+    if (cfg.tipos.bug && tiposProy.includes('Bug')) tipos.push('Bug');
+    if (!tipos.length) throw new Error('El proyecto no tiene ninguno de los tipos elegidos.');
+    // categoría de cada estado (Proposed, InProgress, Resolved, Completed, Removed) según el proceso
+    const categoria = {};
+    for (const t of tipos) {
+      const st = await G(`/${proy}/_apis/wit/workitemtypes/${encodeURIComponent(t)}/states?api-version=7.1`);
+      (st.value || []).forEach(s => { categoria[t + '|' + s.name] = s.category; });
+    }
+    // sprints con sus fechas
+    const sprints = {};
+    const iters = await G(`/${proy}/_apis/wit/classificationnodes/Iterations?$depth=10&api-version=7.1`);
+    (function rec(n, ruta, nivel) {
+      const p = ruta ? `${ruta}\\${n.name}` : n.name;
+      sprints[p] = { nombre: n.name, raiz: nivel === 0, inicio: dia(n.attributes && n.attributes.startDate), fin: dia(n.attributes && n.attributes.finishDate) };
+      (n.children || []).forEach(c => rec(c, p, nivel + 1));
+    })(iters, '', 0);
+    // elementos del proyecto (y del área, si se eligió)
+    progreso('Buscando los elementos…');
+    const query = `SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = @project AND [System.WorkItemType] IN (${tipos.map(t => `'${wq(t)}'`).join(', ')})`
+      + (cfg.area ? ` AND [System.AreaPath] UNDER '${wq(cfg.area)}'` : '') + ' ORDER BY [System.Id]';
+    const r = await G(`/${proy}/_apis/wit/wiql?api-version=7.1`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query }) });
+    let ids = (r.workItems || []).map(w => w.id);
+    const MAX = 2000;
+    const recortado = ids.length > MAX;
+    if (recortado) ids = ids.slice(-MAX); // los más recientes
+    let campos = [...CAMPOS, ...CAMPOS_FECHAS];
+    async function traer(lista, flds) {
+      const res = [];
+      for (let i = 0; i < lista.length; i += 200) {
+        progreso(`Leyendo elementos ${Math.min(i + 200, lista.length)} de ${lista.length}…`);
+        const lote = lista.slice(i, i + 200);
+        let d;
+        try { d = await G(`/${proy}/_apis/wit/workitemsbatch?api-version=7.1`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids: lote, fields: flds }) }); }
+        catch (e) {
+          // algunos procesos no tienen los campos de fechas: se reintenta con los básicos
+          if (e.status === 400 && flds !== CAMPOS) { campos = CAMPOS; flds = CAMPOS; d = await G(`/${proy}/_apis/wit/workitemsbatch?api-version=7.1`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids: lote, fields: flds }) }); }
+          else throw e;
+        }
+        res.push(...(d.value || []));
+      }
+      return res;
+    }
+    const items = await traer(ids, campos);
+    const porId = new Map(items.map(w => [w.id, w]));
+    // padres que no se importaron (Features, Épicas, historias de otras áreas) para nombrar las fases
+    const padres = new Map();
+    for (let nivel = 0; nivel < 2; nivel++) {
+      const faltan = [...new Set([...porId.values(), ...padres.values()].map(w => w.fields['System.Parent']).filter(p => p && !porId.has(p) && !padres.has(p)))];
+      if (!faltan.length) break;
+      (await traer(faltan, ['System.Id', 'System.Title', 'System.WorkItemType', 'System.Parent'])).forEach(w => padres.set(w.id, w));
+    }
+    const elem = id => porId.get(id) || padres.get(id);
+    const f = (w, k) => w && w.fields ? w.fields[k] : undefined;
+    const esHU = w => ['User Story', 'Product Backlog Item', 'Requirement', 'Issue'].includes(f(w, 'System.WorkItemType'));
+    const etiqueta = w => `${PREFIJO[f(w, 'System.WorkItemType')] || f(w, 'System.WorkItemType')} #${w.id} · ${f(w, 'System.Title') || ''}`;
+    function fase(w) {
+      if (cfg.agrupar === 'historia') {
+        if (esHU(w)) return etiqueta(w);
+        const p = elem(f(w, 'System.Parent'));
+        return p && esHU(p) ? etiqueta(p) : 'Sin historia de usuario';
+      }
+      if (cfg.agrupar === 'padre') {
+        let p = elem(f(w, 'System.Parent'));
+        if (p && esHU(p) && !esHU(w)) p = elem(f(p, 'System.Parent')); // tarea → su historia → la Feature
+        return p ? `${f(p, 'System.WorkItemType')} · ${f(p, 'System.Title')}` : 'Sin Feature ni Épica';
+      }
+      const sp = sprints[f(w, 'System.IterationPath')];
+      return sp && !sp.raiz ? sp.nombre : 'Sin sprint';
+    }
+    progreso('Armando el cronograma…');
+    const tareas = [];
+    let estimadas = 0;
+    for (const w of items) {
+      const tipo = f(w, 'System.WorkItemType'), cat = categoria[tipo + '|' + f(w, 'System.State')] || '';
+      if (cat === 'Removed') continue;
+      const sp = sprints[f(w, 'System.IterationPath')];
+      const spOk = sp && sp.inicio && sp.fin ? sp : null;
+      let inicio = dia(f(w, 'Microsoft.VSTS.Scheduling.StartDate')) || (spOk && spOk.inicio);
+      let fin = dia(f(w, 'Microsoft.VSTS.Scheduling.TargetDate') || f(w, 'Microsoft.VSTS.Scheduling.DueDate') || f(w, 'Microsoft.VSTS.Scheduling.FinishDate')) || (spOk && spOk.fin);
+      const cerrado = dia(f(w, 'Microsoft.VSTS.Common.ClosedDate') || (cat === 'Completed' ? (f(w, 'Microsoft.VSTS.Common.StateChangeDate') || f(w, 'System.ChangedDate')) : null));
+      let est = false;
+      if (!inicio) { inicio = dia(f(w, 'System.CreatedDate')) || todayISO(); est = true; }
+      if (!fin) { fin = cerrado || iso(parse(inicio) + 6 * DAY); est = true; }
+      if (parse(fin) < parse(inicio)) fin = inicio;
+      if (est) estimadas++;
+      let avance = 0, completadaEl = null;
+      if (cat === 'Completed') { avance = 100; completadaEl = cerrado && parse(cerrado) >= parse(inicio) ? cerrado : fin; }
+      else if (cat === 'Resolved') avance = 90;
+      else if (cat === 'InProgress') {
+        const c = Number(f(w, 'Microsoft.VSTS.Scheduling.CompletedWork')) || 0, rr = Number(f(w, 'Microsoft.VSTS.Scheduling.RemainingWork')) || 0;
+        avance = c + rr > 0 ? Math.min(95, Math.max(5, Math.round(c / (c + rr) * 100))) : 50;
+      }
+      const asig = f(w, 'System.AssignedTo');
+      tareas.push({
+        azId: w.id, padre: f(w, 'System.Parent') || null, completo: cat === 'Completed',
+        nombre: etiqueta(w), fase: fase(w), responsable: (asig && (asig.displayName || asig)) || '',
+        inicio, fin, avance, completadaEl, hito: false, orden: w.id,
+        azure: { id: w.id, tipo, estado: f(w, 'System.State'), url: `${base}/${proy}/_workitems/edit/${w.id}`, fechasEstimadas: est }
+      });
+    }
+    // el avance de una historia abierta es el promedio de sus tareas
+    const hijos = new Map();
+    tareas.forEach(t => { if (t.padre) { if (!hijos.has(t.padre)) hijos.set(t.padre, []); hijos.get(t.padre).push(t); } });
+    tareas.forEach(t => {
+      const hs = hijos.get(t.azId);
+      if (hs && hs.length && !t.completo) t.avance = Math.min(95, Math.round(hs.reduce((a, h) => a + h.avance, 0) / hs.length));
+    });
+    return { tareas, estimadas, recortado, base, tipos };
+  }
+  // crea el cronograma o actualiza el que ya está vinculado al mismo proyecto y área
+  async function importarAzure(cfg, progreso) {
+    const { tareas, estimadas, recortado, base, tipos } = await leerAzure(cfg, progreso);
+    const vinc = state.proyectos.find(p => p.data.azure && p.data.azure.org === base && p.data.azure.proyecto === cfg.proyecto && (p.data.azure.area || '') === (cfg.area || ''));
+    const pid = vinc ? vinc.id : db.collection('proyectos').doc().id;
+    const previo = vinc ? vinc.data : {};
+    const info = {
+      ...previo,
+      nombre: previo.nombre || (cfg.area ? cfg.area.split('\\').join(' › ') : cfg.proyecto),
+      orden: previo.orden || Date.now(), creado: previo.creado || todayISO(), ejemplo: false,
+      azure: { org: base, proyecto: cfg.proyecto, area: cfg.area || '', agrupar: cfg.agrupar, tipos: cfg.tipos, sincronizado: new Date().toISOString(), cantidad: tareas.length }
+    };
+    const sets = { [`proyectos/${pid}`]: info };
+    tareas.forEach(t => { const { azId, padre, completo, ...body } = t; sets[`proyectos/${pid}/tareas/az-${azId}`] = body; });
+    const deletes = db.claves(`proyectos/${pid}/tareas/az-`).filter(k => !sets[k]);
+    db.lote({ sets, deletes });
+    await new Promise(r => setTimeout(r, 30));
+    if (state.pid !== pid) { state.pid = null; selectProject(pid); }
+    setView('proj');
+    setTimeout(() => queue(recordHistory()), 300); // registra el avance de hoy para la curva
+    return { n: tareas.length, quitadas: deletes.length, nuevo: !vinc, estimadas, recortado, tipos };
+  }
+  const resumenImport = r => `${r.nuevo ? 'Cronograma creado' : 'Cronograma sincronizado'}: ${r.n} ${r.n === 1 ? 'elemento' : 'elementos'} (${r.tipos.join(', ')})`
+    + (r.quitadas ? (r.quitadas === 1 ? ', 1 ya no estaba en Azure y se quitó' : `, ${r.quitadas} ya no estaban en Azure y se quitaron`) : '')
+    + (r.estimadas ? `. ${r.estimadas} sin fechas ni sprint en Azure: se usó su fecha de creación` : '')
+    + (r.recortado ? '. Se importaron los 2.000 más recientes' : '') + '.';
+
+  // diálogo de importación
+  const aziDlg = $('#azi-dialog');
+  const aziStatus = (msg, cls) => { const el = $('#azi-status'); el.textContent = msg; el.className = 'status' + (cls ? ' ' + cls : ''); el.hidden = !msg; };
+  const opc = (v, t, sel) => `<option value="${esc(v)}"${sel ? ' selected' : ''}>${esc(t)}</option>`;
+  function abrirAzi() {
+    $('#azi-org').value = azCfg().org || '';
+    $('#azi-pat').value = azPat();
+    let rec = false; try { rec = !!localStorage.getItem(AZ_PAT); } catch (e) {}
+    $('#azi-remember').checked = rec;
+    $('#azi-proj').innerHTML = opc('', 'Conéctate primero'); $('#azi-proj').disabled = true;
+    $('#azi-area').innerHTML = opc('', 'Elige primero un proyecto'); $('#azi-area').disabled = true;
+    $('#azi-go').disabled = true;
+    aziStatus('');
+    aziDlg.showModal();
+    if ($('#azi-org').value && $('#azi-pat').value) conectarAzi(); else $('#azi-org').focus();
+  }
+  async function conectarAzi() {
+    const org = $('#azi-org').value.trim(), pat = $('#azi-pat').value.trim();
+    const base = azBaseDe(org);
+    if (!base) return aziStatus('Escribe el nombre de la organización (por ejemplo «miempresa»).', 'bad');
+    if (!pat) return aziStatus('Pega tu token de Azure DevOps.', 'bad');
+    // se guarda igual que en la aplicación de historias, así sirve para las dos
+    try {
+      localStorage.setItem(AZ_CFG, JSON.stringify({ ...azCfg(), org }));
+      sessionStorage.setItem(AZ_PAT, pat);
+      if ($('#azi-remember').checked) localStorage.setItem(AZ_PAT, pat); else localStorage.removeItem(AZ_PAT);
+    } catch (e) {}
+    aziStatus('Cargando proyectos…');
+    try {
+      const ps = ((await azGet(base, pat, '/_apis/projects?$top=500&api-version=7.1')).value || []).map(p => p.name).sort((a, b) => a.localeCompare(b, 'es'));
+      const actual = state.info && state.info.azure ? state.info.azure.proyecto : '';
+      $('#azi-proj').innerHTML = opc('', ps.length ? 'Elige un proyecto' : 'No hay proyectos visibles') + ps.map(p => opc(p, p, p === actual)).join('');
+      $('#azi-proj').disabled = !ps.length;
+      aziStatus(ps.length ? `Conectado: ${ps.length} ${ps.length === 1 ? 'proyecto disponible' : 'proyectos disponibles'}.` : 'Tu usuario no ve proyectos en esa organización.', ps.length ? 'ok' : 'bad');
+      if (actual && ps.includes(actual)) await cargarAreasAzi();
+    } catch (e) { aziStatus(e.status === 404 ? 'No se encontró esa organización. Revisa el nombre.' : e.message, 'bad'); }
+  }
+  async function cargarAreasAzi() {
+    const proyecto = $('#azi-proj').value;
+    const sa = $('#azi-area');
+    $('#azi-go').disabled = !proyecto;
+    if (!proyecto) { sa.innerHTML = opc('', 'Elige primero un proyecto'); sa.disabled = true; return; }
+    sa.innerHTML = opc('', 'Cargando áreas…'); sa.disabled = true;
+    try {
+      const raiz = await azGet(azBaseDe($('#azi-org').value), $('#azi-pat').value.trim(), `/${encodeURIComponent(proyecto)}/_apis/wit/classificationnodes/Areas?$depth=10&api-version=7.1`);
+      const lista = [];
+      (function rec(n, ruta, nivel) { const p = ruta ? `${ruta}\\${n.name}` : n.name; lista.push({ p, n: n.name, nivel }); (n.children || []).forEach(c => rec(c, p, nivel + 1)); })(raiz, '', 0);
+      const actual = state.info && state.info.azure && state.info.azure.proyecto === proyecto ? state.info.azure.area : '';
+      sa.innerHTML = lista.map((a, i) => opc(i ? a.p : '', `${'  '.repeat(a.nivel)}${a.nivel ? '└ ' : ''}${a.n}${i ? '' : ' (todo el proyecto)'}`, (i ? a.p : '') === actual)).join('');
+      sa.disabled = false;
+    } catch (e) { sa.innerHTML = opc('', 'Todo el proyecto'); sa.disabled = false; aziStatus(e.message, 'bad'); }
+  }
+  $('#azi-open').addEventListener('click', abrirAzi);
+  $('#azi-cancel').addEventListener('click', () => aziDlg.close());
+  $('#azi-connect').addEventListener('click', conectarAzi);
+  $('#azi-proj').addEventListener('change', cargarAreasAzi);
+  let importando = false;
+  $('#azi-form').addEventListener('submit', async ev => {
+    ev.preventDefault();
+    if (importando) return;
+    const cfg = { org: $('#azi-org').value.trim(), proyecto: $('#azi-proj').value, area: $('#azi-area').value, agrupar: $('#azi-group').value,
+      tipos: { hu: $('#azi-t-hu').checked, task: $('#azi-t-task').checked, bug: $('#azi-t-bug').checked } };
+    if (!cfg.proyecto) return aziStatus('Elige el proyecto.', 'bad');
+    if (!cfg.tipos.hu && !cfg.tipos.task && !cfg.tipos.bug) return aziStatus('Elige al menos un tipo de elemento para traer.', 'bad');
+    importando = true; $('#azi-go').disabled = true;
+    try {
+      const r = await importarAzure(cfg, m => aziStatus(m));
+      aziDlg.close();
+      toast(resumenImport(r), 9000);
+    } catch (e) { aziStatus(e.message, 'bad'); }
+    finally { importando = false; $('#azi-go').disabled = false; }
+  });
+  // sincronizar el cronograma vinculado
+  $('#azi-sync').addEventListener('click', async () => {
+    const a = state.info && state.info.azure;
+    if (!a || importando) return;
+    if (!azPat()) { abrirAzi(); return; }
+    importando = true;
+    const b = $('#azi-sync'); b.disabled = true; b.textContent = 'Sincronizando…';
+    try {
+      const r = await importarAzure({ ...a, org: a.org }, m => { b.textContent = m.length > 40 ? 'Sincronizando…' : m; });
+      toast(resumenImport(r), 9000);
+    } catch (e) { toast(e.message, 9000); if (/token/.test(e.message)) abrirAzi(); }
+    finally { importando = false; b.disabled = false; b.textContent = 'Sincronizar con Azure'; }
+  });
 
   // ---------- inicio ----------
   render();
