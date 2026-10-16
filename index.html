@@ -221,6 +221,16 @@ button, input, select { font: inherit; color: inherit; }
 .azi-grid select, .azi-grid input[type="text"], .azi-grid input[type="password"] { width: 100%; min-width: 0; border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; background: var(--surface); }
 .azi-grid select:focus, .azi-grid input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 2px var(--accent-soft); }
 .azi-tipos { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+/* compartir para consulta */
+.share-warn { font-size: 13px; padding: 10px 12px; border-radius: 6px; border: 1px solid color-mix(in srgb, var(--warn) 50%, transparent);
+  background: color-mix(in srgb, var(--warn) 10%, var(--surface)); }
+#share-link { width: 100%; font-family: var(--f-mono); font-size: 12px; border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px;
+  background: var(--surface-2); resize: vertical; word-break: break-all; }
+.linkish { border: 0; background: none; padding: 0; color: var(--accent); cursor: pointer; font: inherit; text-decoration: underline; }
+.consulta-bar { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; padding: 10px 14px;
+  border-radius: var(--radius); border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); background: var(--accent-soft); }
+.cb-text { min-width: 0; flex: 1 1 320px; }
+.consulta-bar.err { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 9%, var(--surface)); }
 .lbl { font-size: 12px; font-weight: 600; color: var(--muted); }
 .note { margin: 0; color: var(--muted); font-size: 13px; }
 .hint { color: var(--muted); font-size: 12.5px; margin: 0; }
@@ -440,6 +450,10 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
       <span>Modo oscuro</span>
     </label>
   </div>
+  <div class="consulta-bar" id="consulta-bar" role="status" hidden>
+    <div class="cb-text"><b>Modo consulta</b> · solo lectura, con los datos de Azure DevOps · <span id="consulta-info">Cargando…</span></div>
+    <button class="btn primary" id="consulta-sync" type="button">Actualizar desde Azure</button>
+  </div>
   <nav class="proj-bar" id="proj-bar" aria-label="Mis cronogramas" hidden>
     <div class="proj-pick">
       <label for="proj-sel">Mis cronogramas</label>
@@ -449,6 +463,7 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
         <button class="btn" id="proj-new" type="button">+ Nuevo cronograma</button>
         <button class="btn az-imp" id="azi-open" type="button">Importar desde Azure DevOps</button>
         <button class="btn primary" id="azi-sync" type="button" hidden>Sincronizar con Azure</button>
+        <button class="btn" id="az-share" type="button" hidden>Compartir para consulta</button>
         <button class="btn danger" id="proj-del" type="button">Eliminar este cronograma</button>
       </div>
     </div>
@@ -587,6 +602,32 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
   </form>
 </dialog>
 
+<dialog id="share-dialog" class="azi-dialog" aria-labelledby="share-title">
+  <form class="ed" id="share-form" novalidate>
+    <h3 id="share-title">Compartir para consulta</h3>
+    <p class="note">Crea un enlace para que otras personas vean este cronograma <b>sin poner un token</b>. Al abrirlo, la página lee los datos de Azure DevOps y los muestra en <b>solo lectura</b>: nadie puede editar nada desde ahí.</p>
+    <div class="azi-grid">
+      <div class="field full"><label for="share-pat">Token que viaja en el enlace</label>
+        <input id="share-pat" type="password" autocomplete="off" spellcheck="false" placeholder="Pega un token solo de lectura">
+        <span class="hint">Recomendado: en Azure DevOps crea un token aparte con <b>solo</b> el permiso <b>Work Items: Read</b> y una fecha de vencimiento. <button type="button" class="linkish" id="share-mine">Usar el token con el que estoy conectado</button></span>
+      </div>
+    </div>
+    <div class="share-warn">
+      <b>Antes de compartir:</b> cualquiera que tenga el enlace puede usar ese token para leer en Azure DevOps. Compártelo solo con quien corresponda, no lo publiques en sitios abiertos ni lo subas al repositorio. Para cortar el acceso, revoca el token en Azure DevOps (<i>User settings → Personal access tokens</i>).
+    </div>
+    <p class="status" id="share-status" hidden></p>
+    <div class="field" id="share-out" hidden>
+      <label for="share-link">Enlace de consulta</label>
+      <textarea id="share-link" rows="3" readonly></textarea>
+    </div>
+    <div class="ed-foot"><div class="right">
+      <button class="btn" type="button" id="share-cancel">Cerrar</button>
+      <button class="btn" type="button" id="share-copy" hidden>Copiar enlace</button>
+      <button class="btn primary" type="submit" id="share-go">Crear enlace</button>
+    </div></div>
+  </form>
+</dialog>
+
 <dialog id="editor" aria-labelledby="ed-title">
   <form class="ed" id="ed-form" novalidate>
     <h3 id="ed-title">Nueva tarea</h3>
@@ -632,6 +673,20 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
   const state = { info: null, tareas: [], hist: [], mode: 'loading', canWrite: true, scale: 'semanas', editingId: null,
     pid: null, proyectos: [], proyectosListos: false };
   let db = null;
+
+  // ---------- enlace de consulta ----------
+  // «index.html#consulta=…» trae organización, proyecto, área y un token de solo lectura. Va después del «#»,
+  // así nunca se envía a GitHub ni queda en el repositorio: solo lo tiene quien recibe el enlace.
+  const b64url = {
+    enc: obj => btoa(unescape(encodeURIComponent(JSON.stringify(obj)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''),
+    dec: s => JSON.parse(decodeURIComponent(escape(atob(s.replace(/-/g, '+').replace(/_/g, '/')))))
+  };
+  const CONSULTA = (() => {
+    const m = location.hash.match(/[#&]consulta=([^&]+)/);
+    if (!m) return null;
+    try { const c = b64url.dec(m[1]); return c && c.o && c.p && c.k ? c : null; } catch (e) { return null; }
+  })();
+  if (CONSULTA) { state.consulta = CONSULTA; state.canWrite = false; }
   try { const s = localStorage.getItem('gantt-scale'); if (SCALES[s]) state.scale = s; } catch (e) {}
 
   // ---------- fechas ----------
@@ -1045,7 +1100,7 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
 
   // ---------- varios cronogramas ----------
   let unsubs = [];
-  const PID_KEY = 'cronograma-actual';
+  const PID_KEY = CONSULTA ? 'cronograma-consulta-actual' : 'cronograma-actual';
   function selectProject(id) {
     if (!db || id === state.pid) return;
     unsubs.forEach(u => u()); unsubs = [];
@@ -1073,6 +1128,7 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
   }
   function onProjects(snap) {
     state.proyectos = snap.docs.map(d => ({ id: d.id, data: d.data() || {} }))
+      .filter(p => !CONSULTA || (p.data.azure && p.data.azure.org === azBaseDe(CONSULTA.o) && p.data.azure.proyecto === CONSULTA.p && (p.data.azure.area || '') === (CONSULTA.a || '')))
       .sort((a, b) => (a.data.orden || 0) - (b.data.orden || 0));
     state.proyectosListos = true;
     if (state.view === 'port') loadPortfolio();
@@ -1121,7 +1177,7 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
   }
   function renderProjects() {
     const bar = $('#proj-bar');
-    bar.hidden = !db || !state.proyectosListos;
+    bar.hidden = !db || !state.proyectosListos || !!CONSULTA; // en modo consulta solo se ve el cronograma del enlace
     if (bar.hidden) return;
     const sel = $('#proj-sel');
     sel.innerHTML = state.proyectos.length
@@ -1132,6 +1188,7 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
     $('#proj-new').hidden = !state.canWrite;
     const az = state.info && state.info.azure;
     $('#azi-sync').hidden = !az || state.view === 'port';
+    $('#az-share').hidden = !az || state.view === 'port';
     const vinc = $('#az-vinc');
     vinc.hidden = !az || state.view === 'port';
     if (az) {
@@ -1645,12 +1702,12 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
 
   // ---------- métricas de todos los proyectos ----------
   const VIEW_KEY = 'cronograma-vista';
-  try { const v = localStorage.getItem(VIEW_KEY); if (v === 'port' || v === 'proj') state.view = v; } catch (e) {}
+  try { const v = localStorage.getItem(VIEW_KEY); if (!CONSULTA && (v === 'port' || v === 'proj')) state.view = v; } catch (e) {}
   if (!state.view) state.view = 'proj';
   state.port = null;
   function setView(v) {
     state.view = v;
-    try { localStorage.setItem(VIEW_KEY, v); } catch (e) {}
+    if (!CONSULTA) try { localStorage.setItem(VIEW_KEY, v); } catch (e) {}
     $('#view-port').hidden = v !== 'port';
     $('#view-proj').hidden = v === 'port';
     document.querySelectorAll('.view-seg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === v)));
@@ -1900,7 +1957,7 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
 
   // lee el proyecto de Azure y devuelve las tareas del cronograma
   async function leerAzure(cfg, progreso) {
-    const base = azBaseDe(cfg.org), pat = azPat(), proy = encodeURIComponent(cfg.proyecto);
+    const base = azBaseDe(cfg.org), pat = cfg.pat || azPat(), proy = encodeURIComponent(cfg.proyecto);
     const G = (ruta, o) => azGet(base, pat, ruta, o);
     progreso('Leyendo la configuración del proyecto…');
     const tiposProy = ((await G(`/${proy}/_apis/wit/workitemtypes?api-version=7.1`)).value || []).map(t => t.name);
@@ -2025,7 +2082,7 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
     const previo = vinc ? vinc.data : {};
     const info = {
       ...previo,
-      nombre: previo.nombre || (cfg.area ? cfg.area.split('\\').join(' › ') : cfg.proyecto),
+      nombre: cfg.nombre || previo.nombre || (cfg.area ? cfg.area.split('\\').join(' › ') : cfg.proyecto),
       orden: previo.orden || Date.now(), creado: previo.creado || todayISO(), ejemplo: false,
       azure: { org: base, proyecto: cfg.proyecto, area: cfg.area || '', agrupar: cfg.agrupar, tipos: cfg.tipos, sincronizado: new Date().toISOString(), cantidad: tareas.length }
     };
@@ -2130,14 +2187,82 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
     finally { importando = false; b.disabled = false; b.textContent = 'Sincronizar con Azure'; }
   });
 
+  // ---------- compartir para consulta ----------
+  const shDlg = $('#share-dialog');
+  const shStatus = (msg, cls) => { const el = $('#share-status'); el.textContent = msg; el.className = 'status' + (cls ? ' ' + cls : ''); el.hidden = !msg; };
+  $('#az-share').addEventListener('click', () => {
+    $('#share-pat').value = '';
+    $('#share-out').hidden = true; $('#share-copy').hidden = true;
+    shStatus('');
+    shDlg.showModal();
+    $('#share-pat').focus();
+  });
+  $('#share-mine').addEventListener('click', () => {
+    const p = azPat();
+    if (!p) return shStatus('No hay un token guardado en esta pestaña. Pega uno o conéctate con «Sincronizar con Azure».', 'bad');
+    $('#share-pat').value = p;
+    shStatus('Se usará tu token actual. Si tiene permisos de escritura, quien tenga el enlace también podría usarlos: es mejor uno solo de lectura.', '');
+  });
+  $('#share-cancel').addEventListener('click', () => shDlg.close());
+  $('#share-copy').addEventListener('click', async () => {
+    const t = $('#share-link');
+    try { await navigator.clipboard.writeText(t.value); }
+    catch (e) { t.select(); document.execCommand('copy'); }
+    shStatus('Enlace copiado. Pégalo solo a quien deba ver el cronograma.', 'ok');
+  });
+  $('#share-form').addEventListener('submit', async ev => {
+    ev.preventDefault();
+    const a = state.info && state.info.azure;
+    const pat = $('#share-pat').value.trim();
+    if (!a) return shStatus('Este cronograma no está vinculado a Azure DevOps.', 'bad');
+    if (!pat) return shStatus('Pega el token que viajará en el enlace.', 'bad');
+    // se comprueba que el token pueda leer el proyecto antes de entregar el enlace
+    shStatus('Probando el token…');
+    $('#share-go').disabled = true;
+    try { await azGet(azBaseDe(a.org), pat, `/${encodeURIComponent(a.proyecto)}/_apis/wit/workitemtypes?api-version=7.1`); }
+    catch (e) { shStatus(e.status === 404 ? 'El token no ve ese proyecto.' : e.message, 'bad'); return; }
+    finally { $('#share-go').disabled = false; }
+    const datos = { v: 1, o: a.org, p: a.proyecto, a: a.area || '', g: a.agrupar || 'sprint', t: a.tipos || { hu: true, task: true }, n: (state.info && state.info.nombre) || '', k: pat };
+    $('#share-link').value = location.origin + location.pathname + '#consulta=' + b64url.enc(datos);
+    $('#share-out').hidden = false; $('#share-copy').hidden = false;
+    shStatus('Enlace listo. Quien lo abra verá este cronograma en solo lectura, actualizado desde Azure.', 'ok');
+  });
+
+  // ---------- modo consulta: carga el cronograma del enlace desde Azure ----------
+  let consultando = false;
+  async function actualizarConsulta() {
+    if (consultando) return;
+    consultando = true;
+    const bar = $('#consulta-bar'), info = $('#consulta-info'), btn = $('#consulta-sync');
+    bar.classList.remove('err'); btn.disabled = true;
+    const c = CONSULTA;
+    try {
+      const r = await importarAzure({ org: c.o, proyecto: c.p, area: c.a || '', agrupar: c.g || 'sprint', tipos: c.t || { hu: true, task: true }, nombre: c.n || '', pat: c.k },
+        m => { info.textContent = m; });
+      const f = new Date();
+      info.textContent = `${r.n} ${r.n === 1 ? 'elemento' : 'elementos'} · actualizado a las ${String(f.getHours()).padStart(2, '0')}:${String(f.getMinutes()).padStart(2, '0')}`;
+    } catch (e) {
+      bar.classList.add('err');
+      info.textContent = /token/.test(e.message)
+        ? 'El token de este enlace ya no sirve (venció o fue revocado). Pide un enlace nuevo a quien te lo compartió.'
+        : e.message + (state.tareas.length ? ' Se muestra la última información descargada.' : '');
+    } finally { consultando = false; btn.disabled = false; }
+  }
+  $('#consulta-sync').addEventListener('click', actualizarConsulta);
+
   // ---------- inicio ----------
   render();
   try {
-    db = createLocalDB('cronograma-proyectos-ti:v1');
+    // el modo consulta usa su propio almacenamiento: no toca los cronogramas de quien abre el enlace
+    db = createLocalDB(CONSULTA ? 'cronograma-consulta:v1' : 'cronograma-proyectos-ti:v1');
   } catch (e) { db = null; }
-  setView(state.view);
+  setView(CONSULTA ? 'proj' : state.view);
   if (!db) { state.mode = 'offline'; render(); }
   else db.collection('proyectos').onSnapshot(onProjects);
+  if (CONSULTA && db) {
+    $('#consulta-bar').hidden = false;
+    actualizarConsulta();
+  }
 })();
 </script>
 </body>

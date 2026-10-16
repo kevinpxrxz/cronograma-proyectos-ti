@@ -17,6 +17,11 @@ Es un único archivo (`index.html`). No necesita servidor ni base de datos.
   - **fases:** por sprint, por Feature/Épica o por historia de usuario.
 
   **Sincronizar con Azure** vuelve a traer todo: actualiza lo que cambió, agrega lo nuevo y quita lo que se eliminó en Azure, sin duplicar el cronograma. Las tareas que agregues a mano en ese cronograma no se tocan.
+- **Compartir para consulta:** en un cronograma vinculado a Azure, este botón crea un **enlace con el token incluido**. Quien lo abra ve el cronograma en **solo lectura**, con los datos de Azure al momento, sin escribir ningún token; con **Actualizar desde Azure** lo refresca.
+  - El token va después del `#` del enlace: no se envía a GitHub ni queda en el repositorio; solo lo tiene quien recibe el enlace.
+  - Usa un token aparte con **solo** el permiso **Work Items: Read** y con fecha de vencimiento. Cualquiera que tenga el enlace puede usar ese token para leer en Azure DevOps, así que compártelo solo con quien corresponda.
+  - Para quitar el acceso, revoca ese token en Azure DevOps (*User settings → Personal access tokens*). Si el token vence, la página avisa que hay que pedir un enlace nuevo.
+  - El modo consulta no toca los cronogramas propios de quien abre el enlace.
 - **Periodo del proyecto:** fecha de inicio y de fin. Avisa si una tarea queda fuera del periodo.
 - **Fases libres:** créalas, renómbralas y agrega tareas con el botón **+** de cada fase.
 - **Avance manual por tarea**, con:
