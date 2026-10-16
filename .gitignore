@@ -1,0 +1,8 @@
+# Versión que solo funciona dentro de claude.ai (no se publica)
+version-claude-ai/
+
+# Archivos del sistema y del editor
+Thumbs.db
+desktop.ini
+.DS_Store
+.claude/
