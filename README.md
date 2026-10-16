@@ -17,11 +17,12 @@ Es un único archivo (`index.html`). No necesita servidor ni base de datos.
   - **fases:** por sprint, por Feature/Épica o por historia de usuario.
 
   **Sincronizar con Azure** vuelve a traer todo: actualiza lo que cambió, agrega lo nuevo y quita lo que se eliminó en Azure, sin duplicar el cronograma. Las tareas que agregues a mano en ese cronograma no se tocan.
-- **Compartir para consulta:** en un cronograma vinculado a Azure, este botón crea un **enlace con el token incluido**. Quien lo abra ve el cronograma en **solo lectura**, con los datos de Azure al momento, sin escribir ningún token; con **Actualizar desde Azure** lo refresca.
-  - El token va después del `#` del enlace: no se envía a GitHub ni queda en el repositorio; solo lo tiene quien recibe el enlace.
-  - Usa un token aparte con **solo** el permiso **Work Items: Read** y con fecha de vencimiento. Cualquiera que tenga el enlace puede usar ese token para leer en Azure DevOps, así que compártelo solo con quien corresponda.
-  - Para quitar el acceso, revoca ese token en Azure DevOps (*User settings → Personal access tokens*). Si el token vence, la página avisa que hay que pedir un enlace nuevo.
-  - El modo consulta no toca los cronogramas propios de quien abre el enlace.
+- **Token fijo en el link de la aplicación (`config.js`):** quien abre el link de siempre recibe tus cronogramas de Azure sin escribir ningún token y puede editarlos en su navegador. Nada se sube a Azure: el cronograma solo lee.
+  - En un cronograma vinculado a Azure pulsa **Fijar en el link de la aplicación**, pega el token y elige si van todos tus cronogramas vinculados. Genera el contenido de `config.js` (para copiar o descargar).
+  - Reemplaza `config.js` en el repositorio con ese contenido y súbelo. Con `config.js` vacío, la aplicación funciona como siempre.
+  - Cada persona recibe los cronogramas la **primera vez** que abre la página. Después no se vuelven a traer solos, para no borrar lo que haya editado; para refrescarlos está **Sincronizar con Azure**.
+  - Si la persona tiene su propio token guardado, se usa el suyo.
+  - **Importante:** el token queda a la vista de cualquiera que abra la página. Si el repositorio es **público**, GitHub lo detecta y Microsoft suele revocarlo automáticamente (y GitHub puede bloquear el Push). Para que dure, vuelve el repositorio **privado** (GitHub Pro permite publicar Pages desde un repositorio privado). Usa un token con **solo** el permiso **Work Items: Read** y con fecha de vencimiento; para cortar el acceso, revócalo en Azure DevOps (*User settings → Personal access tokens*).
 - **Periodo del proyecto:** fecha de inicio y de fin. Avisa si una tarea queda fuera del periodo.
 - **Fases libres:** créalas, renómbralas y agrega tareas con el botón **+** de cada fase.
 - **Avance manual por tarea**, con:
