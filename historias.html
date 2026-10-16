@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="Diseño de historias de usuario con criterios de aceptación Dado / Cuando / Entonces y exportación a Excel.">
+<meta name="description" content="Diseño de historias de usuario con criterios de aceptación por escenario (situación → resultado esperado), Excel y Azure DevOps.">
 <title>Historias de Usuario</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,7 +18,7 @@ html, body { margin: 0; }
 :root {
   --bg: #f2f4f7; --surface: #ffffff; --surface-2: #eceff4; --fg: #131a23; --muted: #5a6675;
   --line: #d9dfe7; --accent: #2453c9; --accent-soft: #dfe7fb; --on-accent: #ffffff;
-  --ok: #1d8a5a; --warn: #a96500; --bad: #c23b33; --k-dado: #12867a; --k-cuando: #6a4fc2;
+  --ok: #1d8a5a; --warn: #a96500; --bad: #c23b33; --k-sit: #6a4fc2;
   --f-display: "Archivo", "Segoe UI", system-ui, sans-serif;
   --f-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
   --f-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
@@ -27,12 +27,12 @@ html, body { margin: 0; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg: #0e131a; --surface: #161d26; --surface-2: #1d2631; --fg: #e6ebf1; --muted: #97a3b2;
   --line: #2a3441; --accent: #7d9cf4; --accent-soft: #233355; --on-accent: #0e131a;
-  --ok: #4cc28a; --warn: #e0a43a; --bad: #f0736a; --k-dado: #3fc1b2; --k-cuando: #a28cf0;
+  --ok: #4cc28a; --warn: #e0a43a; --bad: #f0736a; --k-sit: #a28cf0;
   color-scheme: dark; } }
 :root[data-theme="dark"] {
   --bg: #0e131a; --surface: #161d26; --surface-2: #1d2631; --fg: #e6ebf1; --muted: #97a3b2;
   --line: #2a3441; --accent: #7d9cf4; --accent-soft: #233355; --on-accent: #0e131a;
-  --ok: #4cc28a; --warn: #e0a43a; --bad: #f0736a; --k-dado: #3fc1b2; --k-cuando: #a28cf0;
+  --ok: #4cc28a; --warn: #e0a43a; --bad: #f0736a; --k-sit: #a28cf0;
   color-scheme: dark; }
 
 * { box-sizing: border-box; }
@@ -83,11 +83,17 @@ h1 { margin: 0; font-family: var(--f-display); font-size: clamp(24px, 3.4vw, 34p
 .desc.vacia { color: var(--muted); font-style: italic; }
 .crit { display: grid; gap: 6px; }
 .crit-sum { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
-.gwt { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 4px 10px; padding: 10px 12px; border-radius: 6px; background: var(--surface-2); }
-.gwt-n { font-family: var(--f-mono); font-size: 12px; color: var(--muted); grid-row: span 3; padding-top: 1px; }
-.gwt p { margin: 0; white-space: pre-line; }
-.gwt b { display: inline-block; min-width: 70px; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; }
-.k-dado { color: var(--k-dado); } .k-cuando { color: var(--k-cuando); } .k-entonces { color: var(--ok); }
+/* criterio: CA-01 + nombre del escenario, y debajo situación → resultado esperado */
+.ca { display: grid; gap: 6px; padding: 10px 12px; border-radius: 6px; background: var(--surface-2); }
+.ca-head { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.ca-code { font-family: var(--f-mono); font-size: 12px; font-weight: 500; color: var(--muted); }
+.ca-name { font-weight: 600; }
+.ca-name.vacio { color: var(--muted); font-weight: 400; font-style: italic; }
+.ca-body { display: grid; grid-template-columns: 82px minmax(0, 1fr); gap: 4px 10px; }
+.ca-body b { font-size: 12px; letter-spacing: .04em; text-transform: uppercase; padding-top: 1px; }
+.ca-body p { margin: 0; white-space: pre-line; }
+.k-sit { color: var(--k-sit); } .k-res { color: var(--ok); }
+@media (max-width: 520px) { .ca-body { grid-template-columns: minmax(0, 1fr); gap: 0; } .ca-body p { margin-bottom: 4px; } }
 .empty { background: var(--surface); border: 1px dashed var(--line); border-radius: var(--radius); padding: 36px 20px; text-align: center; color: var(--muted); display: grid; gap: 10px; justify-items: center; }
 mark { background: color-mix(in srgb, var(--warn) 30%, transparent); color: inherit; border-radius: 2px; }
 
@@ -98,8 +104,8 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
 .ed-top h3 { margin: 0; font-family: var(--f-display); font-size: 19px; }
 .field { display: grid; gap: 5px; min-width: 0; }
 .field label { font-size: 12px; font-weight: 600; color: var(--muted); }
-.field input, .field textarea, .crit-row textarea { width: 100%; min-width: 0; border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; background: var(--surface); resize: vertical; }
-.field input:focus, .field textarea:focus, .crit-row textarea:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 2px var(--accent-soft); }
+.field input, .field textarea, .crit-row textarea, .crit-row input { width: 100%; min-width: 0; border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; background: var(--surface); resize: vertical; }
+.field input:focus, .field textarea:focus, .crit-row textarea:focus, .crit-row input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 2px var(--accent-soft); }
 .crit-head { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
 .crit-head h4 { margin: 0; font-size: 14px; }
 .crit-list { display: grid; gap: 10px; }
@@ -245,10 +251,26 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
   // ---------- datos (localStorage de este navegador) ----------
   let historias = [];
   let ultimoNumero = 0; // nunca se reutiliza un código, aunque se borre la historia
+  // Formato de criterio: { nombre, situacion, resultado }.
+  // Los criterios antiguos (Dado / Cuando / Entonces) se convierten sin perder texto.
+  const normCrit = c => {
+    c = c || {};
+    if (c.situacion !== undefined || c.resultado !== undefined || c.nombre !== undefined) {
+      return { nombre: String(c.nombre || ''), situacion: String(c.situacion || ''), resultado: String(c.resultado || '') };
+    }
+    const dado = String(c.dado || '').trim(), cuando = String(c.cuando || '').trim();
+    return {
+      nombre: '',
+      situacion: [dado && 'Dado ' + dado, cuando && 'cuando ' + cuando].filter(Boolean).join(', '),
+      resultado: String(c.entonces || '').trim()
+    };
+  };
+  const caCodigo = i => 'CA-' + String(i + 1).padStart(2, '0');
+  const caTitulo = (c, i) => caCodigo(i) + (c.nombre ? ' · ' + c.nombre : '');
   function cargar() {
     try {
       const d = JSON.parse(localStorage.getItem(KEY) || '{}');
-      historias = Array.isArray(d.historias) ? d.historias : [];
+      historias = (Array.isArray(d.historias) ? d.historias : []).map(h => ({ ...h, criterios: (h.criterios || []).map(normCrit) }));
       ultimoNumero = Math.max(d.ultimoNumero || 0, ...historias.map(h => h.numero || 0), 0);
     } catch (e) { historias = []; }
   }
@@ -273,13 +295,13 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
     $('#sub').textContent = `${todas.length === 1 ? '1 historia' : todas.length + ' historias'} · ${nCrit === 1 ? '1 criterio de aceptación' : nCrit + ' criterios de aceptación'}`;
     $('#xls').disabled = !todas.length;
     const s = q();
-    const lista = s ? todas.filter(h => [codigo(h), h.titulo, h.descripcion, ...(h.criterios || []).flatMap(c => [c.dado, c.cuando, c.entonces])]
+    const lista = s ? todas.filter(h => [codigo(h), h.titulo, h.descripcion, ...(h.criterios || []).flatMap((c, i) => [caCodigo(i), c.nombre, c.situacion, c.resultado])]
       .some(x => String(x || '').toLowerCase().includes(s))) : todas;
     $('#count').textContent = s ? `${lista.length} de ${todas.length} coinciden con «${$('#q').value.trim()}»` : '';
     const el = $('#list');
     if (!todas.length) {
       el.innerHTML = `<div class="empty"><strong>Aún no hay historias de usuario.</strong>
-        <span>Cada historia tiene un título, una descripción y sus criterios de aceptación en formato Dado / Cuando / Entonces.</span>
+        <span>Cada historia tiene un título, una descripción y sus criterios de aceptación: cada criterio es un escenario con su situación y su resultado esperado.</span>
         <button class="btn primary" type="button" data-new>+ Escribir la primera historia</button></div>`;
       return;
     }
@@ -298,11 +320,13 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
         ${h.descripcion ? `<p class="desc">${resaltar(h.descripcion, s)}</p>` : '<p class="desc vacia">Sin descripción.</p>'}
         <div class="crit">
           <span class="crit-sum">${cs.length ? (cs.length === 1 ? '1 criterio de aceptación' : cs.length + ' criterios de aceptación') : 'Sin criterios de aceptación todavía'}</span>
-          ${cs.map((c, i) => `<div class="gwt">
-            <span class="gwt-n">${i + 1}.</span>
-            <p><b class="k-dado">Dado</b> ${resaltar(c.dado, s)}</p>
-            <p><b class="k-cuando">Cuando</b> ${resaltar(c.cuando, s)}</p>
-            <p><b class="k-entonces">Entonces</b> ${resaltar(c.entonces, s)}</p>
+          ${cs.map((c, i) => `<div class="ca">
+            <div class="ca-head"><span class="ca-code">${resaltar(caCodigo(i), s)}</span>
+              ${c.nombre ? `<span class="ca-name">${resaltar(c.nombre, s)}</span>` : '<span class="ca-name vacio">Escenario sin nombre</span>'}</div>
+            <div class="ca-body">
+              <b class="k-sit">Situación</b><p>${resaltar(c.situacion, s)}</p>
+              <b class="k-res">Resultado</b><p>${resaltar(c.resultado, s)}</p>
+            </div>
           </div>`).join('')}
         </div>
         ${azFila(h)}
@@ -316,15 +340,15 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
   const dlg = $('#editor');
   let editId = null;
   const critRow = (c, i) => `<div class="crit-ed" data-crit>
-      <div class="crit-ed-top"><span>Criterio ${i + 1}</span><button type="button" data-crit-del>Quitar</button></div>
-      <div class="crit-row"><label class="k-dado">Dado</label><textarea rows="1" data-k="dado" aria-label="Dado, criterio ${i + 1}" placeholder="el contexto o situación inicial…">${esc(c.dado || '')}</textarea></div>
-      <div class="crit-row"><label class="k-cuando">Cuando</label><textarea rows="1" data-k="cuando" aria-label="Cuando, criterio ${i + 1}" placeholder="la acción que realiza el usuario…">${esc(c.cuando || '')}</textarea></div>
-      <div class="crit-row"><label class="k-entonces">Entonces</label><textarea rows="1" data-k="entonces" aria-label="Entonces, criterio ${i + 1}" placeholder="el resultado esperado…">${esc(c.entonces || '')}</textarea></div>
+      <div class="crit-ed-top"><span>${caCodigo(i)}</span><button type="button" data-crit-del>Quitar</button></div>
+      <div class="crit-row"><label>Escenario</label><input type="text" maxlength="120" data-k="nombre" aria-label="Nombre del escenario ${caCodigo(i)}" placeholder="Nombre corto. Ej.: Correo no registrado" value="${esc(c.nombre || '')}"></div>
+      <div class="crit-row"><label class="k-sit">Situación</label><textarea rows="2" data-k="situacion" aria-label="Situación ${caCodigo(i)}" placeholder="Qué pasa o qué hace el usuario. Ej.: pide recuperar la contraseña con un correo que no existe.">${esc(c.situacion || '')}</textarea></div>
+      <div class="crit-row"><label class="k-res">Resultado</label><textarea rows="2" data-k="resultado" aria-label="Resultado esperado ${caCodigo(i)}" placeholder="Qué debe pasar. Ej.: ve un mensaje genérico, sin revelar si el correo existe.">${esc(c.resultado || '')}</textarea></div>
     </div>`;
   const leerCriterios = () => [...document.querySelectorAll('#crit-list [data-crit]')].map(r => ({
-    dado: r.querySelector('[data-k="dado"]').value.trim(),
-    cuando: r.querySelector('[data-k="cuando"]').value.trim(),
-    entonces: r.querySelector('[data-k="entonces"]').value.trim()
+    nombre: r.querySelector('[data-k="nombre"]').value.trim(),
+    situacion: r.querySelector('[data-k="situacion"]').value.trim(),
+    resultado: r.querySelector('[data-k="resultado"]').value.trim()
   }));
   const pintar = cs => { $('#crit-list').innerHTML = cs.map(critRow).join(''); };
   function abrir(id, base) {
@@ -344,7 +368,7 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
   }
   $('#add-crit').addEventListener('click', () => {
     const cs = leerCriterios(); cs.push({}); pintar(cs);
-    const last = [...document.querySelectorAll('#crit-list [data-k="dado"]')].pop();
+    const last = [...document.querySelectorAll('#crit-list [data-k="nombre"]')].pop();
     if (last) last.focus();
   });
   $('#crit-list').addEventListener('click', ev => {
@@ -373,9 +397,9 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
     const err = m => { $('#err').textContent = m; $('#err').hidden = false; };
     const titulo = $('#titulo').value.trim();
     if (!titulo) return err('Escribe el título de la historia.');
-    const cs = leerCriterios().filter(c => c.dado || c.cuando || c.entonces);
-    const inc = cs.findIndex(c => !c.dado || !c.cuando || !c.entonces);
-    if (inc >= 0) return err(`Completa Dado, Cuando y Entonces del criterio ${inc + 1}, o quítalo.`);
+    const cs = leerCriterios().filter(c => c.nombre || c.situacion || c.resultado);
+    const inc = cs.findIndex(c => !c.situacion || !c.resultado);
+    if (inc >= 0) return err(`Completa la situación y el resultado del ${caCodigo(inc)}${cs[inc].nombre ? ' («' + cs[inc].nombre + '»)' : ''}, o quítalo.`);
     const prev = editId ? historias.find(x => x.id === editId) : null;
     const h = {
       id: prev ? prev.id : genId(),
@@ -443,7 +467,7 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
   }
   const aHtml = s => esc(s).replace(/\n/g, '<br>');
   const criteriosHtml = cs => cs.length
-    ? '<ol>' + cs.map(c => `<li><b>Dado</b> ${aHtml(c.dado)}<br><b>Cuando</b> ${aHtml(c.cuando)}<br><b>Entonces</b> ${aHtml(c.entonces)}</li>`).join('') + '</ol>'
+    ? cs.map((c, i) => `<p><b>${aHtml(caTitulo(c, i))}</b><br><b>Situación:</b> ${aHtml(c.situacion)}<br><b>Resultado esperado:</b> ${aHtml(c.resultado)}</p>`).join('')
     : '';
   function operaciones(h, crear) {
     const ops = [{ op: 'add', path: '/fields/System.Title', value: h.titulo }];
@@ -649,7 +673,7 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
       const line = { style: 'thin', color: { argb: 'FFD5DBE3' } };
       const border = { top: line, bottom: line, left: line, right: line };
       const hr = ws.getRow(3);
-      hr.values = ['Código', 'Historia', 'Descripción', 'N.º', 'Dado', 'Cuando', 'Entonces'];
+      hr.values = ['Código', 'Historia', 'Descripción', 'Criterio', 'Escenario', 'Situación', 'Resultado esperado'];
       hr.eachCell(c => { c.font = { bold: true, color: { argb: 'FFFFFFFF' } }; c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F2A37' } }; c.alignment = { horizontal: 'center', vertical: 'middle' }; c.border = border; });
       let r = 4;
       hs.forEach((h, i) => {
@@ -657,7 +681,7 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
         const fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: i % 2 ? 'FFF5F7FA' : 'FFFFFFFF' } };
         cs.forEach((c, j) => {
           const row = ws.getRow(r++);
-          row.values = [codigo(h), h.titulo || '', h.descripcion || '', c ? j + 1 : '', c ? c.dado : '(sin criterios)', c ? c.cuando : '', c ? c.entonces : ''];
+          row.values = [codigo(h), h.titulo || '', h.descripcion || '', c ? caCodigo(j) : '', c ? c.nombre : '(sin criterios)', c ? c.situacion : '', c ? c.resultado : ''];
           row.eachCell({ includeEmpty: true }, cell => { cell.border = border; cell.fill = fill; cell.alignment = { vertical: 'top', wrapText: true }; });
           row.getCell(1).font = { bold: true, color: { argb: 'FF2453C9' } };
           row.getCell(4).alignment = { vertical: 'top', horizontal: 'center' };
@@ -692,7 +716,7 @@ dialog::backdrop { background: rgb(10 14 20 / .45); }
       if (!obj || obj.app !== 'historias-usuario' || !Array.isArray(obj.historias)) { toast('El archivo no es un respaldo de historias de usuario.'); return; }
       const validas = obj.historias.filter(h => h && typeof h.id === 'string' && typeof h.titulo === 'string')
         .map(h => ({ id: h.id, numero: Number(h.numero) || 0, titulo: h.titulo, descripcion: String(h.descripcion || ''),
-          criterios: (Array.isArray(h.criterios) ? h.criterios : []).map(c => ({ dado: String(c.dado || ''), cuando: String(c.cuando || ''), entonces: String(c.entonces || '') })),
+          criterios: (Array.isArray(h.criterios) ? h.criterios : []).map(normCrit),
           creado: h.creado || hoy(), actualizado: h.actualizado || hoy(),
           azure: h.azure && Number.isInteger(h.azure.id) && /^https:\/\//.test(String(h.azure.url || '')) ? {
             id: h.azure.id, url: String(h.azure.url), destino: String(h.azure.destino || ''), firma: String(h.azure.firma || ''), subido: String(h.azure.subido || '')
